@@ -48,7 +48,6 @@
     </div>
 </div>
 <?php } ?>
-
 <script>
     $(document).ready(function() {
         $('#clientTable').DataTable({
@@ -61,5 +60,4 @@
         });
     });
 </script>
-
 <?php require_once '../includes/footer.php'; ?>

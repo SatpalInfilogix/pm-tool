@@ -9,15 +9,8 @@
 <script src="<?php echo BASE_URL; ?>/assets/js/app.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/sweetalert2/sweetalert2.min.js"></script>
-<!-- <script src="<?php //echo BASE_URL; 
-                    ?>/assets/libs/datatable/dataTables.min.js"></script> -->
 <script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net/js/jquery.dataTables.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
-<script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
-<script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-buttons-bs4/js/buttons.bootstrap4.min.js"></script>
-<script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-buttons/js/buttons.html5.min.js"></script>
-<script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-buttons/js/buttons.print.min.js"></script>
-<script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-buttons/js/buttons.colVis.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/datatables.net-responsive-bs4/js/datatables.init.js"></script>
