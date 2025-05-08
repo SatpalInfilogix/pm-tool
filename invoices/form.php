@@ -3,7 +3,7 @@
         <div class="card-body">
             <div class="d-flex justify-content-between gap-4 flex-wrap mb-4">
 
-                <div class="flex-fill" style="max-width: 200px;">
+           <div class="flex-fill" style="max-width: 200px;">
                     <label for="invoiceId" class="form-label">Invoice ID</label>
                     <input type="text" class="form-control" id="invoiceId" name="invoiceId" readonly
                         value="<?= isset($invoice['invoice_id']) ? htmlspecialchars($invoice['invoice_id']) : htmlspecialchars($invoicev['id']) ?>">
@@ -73,7 +73,7 @@
 </form>
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
 
         $("#invoiceDate").datepicker({
             format: 'yyyy-mm-dd',
@@ -180,7 +180,7 @@
                     min: "Rate must be greater than or equal to 0"
                 }
             },
-            submitHandler: function (form) {
+            submitHandler: function(form) {
                 form.submit();
             }
         });
@@ -196,27 +196,29 @@
             const id = task.id || '';
 
             return `
-        <input type="hidden" name="items[${count}][id]" value="${id}">
-        <div class="row g-3 mb-3 invoice-item" data-index="${count}">
-            <div class="col-md-6">
-                <label class="form-label">Task Title</label>
-                <input type="text" class="form-control" name="items[${count}][title]" value="${title}" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Hours</label>
-                <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Rate</label>
-                <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                ${isSingle
-                    ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
-                    : '<button type="button" class="btn btn-danger   remove-item">Remove</button>'}
-            </div>
+    <input type="hidden" name="items[${count}][id]" value="${id}">
+    <div class="row g-3 mb-3 invoice-item" data-index="${count}">
+        <div class="col-md-6">
+            <label class="form-label">Task Title</label>
+            <input type="text" class="form-control" name="items[${count}][title]" value="${title}" required>
         </div>
-    `;
+        <div class="col-md-2">
+            <label class="form-label">Hours</label>
+            <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Rate</label>
+            <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label invisible">Action</label>
+            ${isSingle
+                ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
+                : '<button type="button" class="btn btn-danger w-100 remove-item">Remove</button>'}
+        </div>
+    </div>
+`;
+
         }
 
 
@@ -233,7 +235,7 @@
         }
 
 
-        $('#invoiceItemsContainer').on('click', '.add-task', function () {
+        $('#invoiceItemsContainer').on('click', '.add-task', function() {
 
             $(this)
                 .removeClass('btn-primary add-task')
@@ -246,7 +248,7 @@
         });
 
 
-        $('#invoiceItemsContainer').on('click', '.remove-item', function () {
+        $('#invoiceItemsContainer').on('click', '.remove-item', function() {
             $(this).closest('.invoice-item').remove();
 
 
@@ -258,5 +260,4 @@
         });
 
     });
-
 </script>

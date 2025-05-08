@@ -2,24 +2,12 @@
 require_once '../includes/db.php';
 require_once '../includes/header.php';
 
-$settings = [
-    'site_logo' => 'uploads/my_logo.png',
-    'site_title' => 'PM Tool',
-    'site_favicon' => 'assets/images/default-favicon.ico',
-    'site_small_logo' => 'uploads/logos/small-default.png' // Add this line
-];
 
+$logo = getSetting('site_logo') ?? 'uploads/my_logo.png';
+$page_title = getSetting('site_title') ?? 'PM Tool';
+$favicon_path = getSetting('site_favicon') ?? 'assets/images/default-favicon.ico';
+$small_logo = getSetting('site_small_logo') ?? 'uploads/logos/small-default.png';
 
-// Fetch settings from the database
-$result = $conn->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('site_logo', 'site_title', 'site_favicon', 'site_small_logo')");
-while ($row = $result->fetch_assoc()) {
-    $settings[$row['setting_key']] = $row['setting_value'];
-}
-
-$logo = getSetting('site_logo');
-$page_title = getSetting('site_title');
-$favicon_path = getSetting('site_favicon');
-$small_logo = getSetting('site_small_logo');
 if (isset($_POST['save_settings']))
 {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -105,7 +93,7 @@ if (isset($_POST['save_settings']))
     }
     ?>
     <script>
-        window.location.href = 'site-settings.php';
+        window.location.href = 'site-setting.php';
     </script>
     <?php
 }
