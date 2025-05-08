@@ -253,21 +253,21 @@
                                 </a>
                             </li>
                             <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') { ?>
-                            <li>
-                                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                    <i class="bx bxs-report"></i>
-                                    <span>Reports</span>
-                                </a>
-                                <ul class="sub-menu" aria-expanded="false">
-                                    <li><a href="<?php echo BASE_URL; ?>/reports/expense-report.php">Expense Report</a></li>
-                                    <li><a href="<?php echo BASE_URL; ?>/reports/attendance-report.php">Attendance Report</a></li>
-                                    <li><a href="<?php echo BASE_URL; ?>/reports/leaves-report.php">Leave Report</a></li>
-                                </ul>
-                            </li>
+                                <li>
+                                    <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                        <i class="bx bxs-report"></i>
+                                        <span>Reports</span>
+                                    </a>
+                                    <ul class="sub-menu" aria-expanded="false">
+                                        <li><a href="<?php echo BASE_URL; ?>/reports/expense-report.php">Expense Report</a></li>
+                                        <li><a href="<?php echo BASE_URL; ?>/reports/attendance-report.php">Attendance Report</a></li>
+                                        <li><a href="<?php echo BASE_URL; ?>/reports/leaves-report.php">Leave Report</a></li>
+                                    </ul>
+                                </li>
                             <?php } ?>
-                            <?php if ($userProfile['role'] === 'admin' ) { ?>
+                            <?php if ($userProfile['role'] === 'admin') { ?>
 
-                            <li>
+                                <li>
                                     <a href="javascript: void(0);" class="has-arrow waves-effect">
                                         <i class="bx bx-cog"></i>
                                         <span>Settings</span>
@@ -277,7 +277,7 @@
                                         <li><a href="<?php echo BASE_URL; ?>/settings/billing-setting.php">Billing</a></li>
                                     </ul>
                                 </li>
-
+                            <?php } ?>
                         </ul>
                     </div>
                 </div>
