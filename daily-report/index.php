@@ -5,7 +5,6 @@
     $userRole = $userProfile['role'];
     $date_filter = isset($_GET['date-filter']) ? $_GET['date-filter'] : date('Y-m-d');
     $date = date('Y-m-d', strtotime($date_filter));
-    
 
 
     // Core query

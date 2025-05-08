@@ -1,22 +1,13 @@
 <?php
 ob_start();
 require_once '../includes/header.php';
-$user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
-    $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
-    $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
-    exit();
-}
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if (!$id) {
     echo "<div class='alert alert-danger'>Invalid ID.</div>";
     exit;
 }
 
-// Handle form submission before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['project_status'])) {
     $chargable_hours = (int)$_POST['chargable_hours'];
     $non_chargable_hours = (int)$_POST['non_chargable_hours'];

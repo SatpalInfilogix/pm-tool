@@ -13,62 +13,76 @@ if ($result && $row = $result->fetch_assoc()) {
 }
 
 if (isset($_POST['add-invoices'])) {
-    $invoiceDate = $conn->real_escape_string($_POST['invoiceDate']);
-    $billedByName = $conn->real_escape_string($_POST['billedByName']);
-    $billedByPan = $conn->real_escape_string($_POST['billedByPan']);
-    $billedByAddress = $conn->real_escape_string($_POST['billedByAddress']);
-    $billedToName = $conn->real_escape_string($_POST['billedToName']);
-    $billedToPan = $conn->real_escape_string($_POST['billedToPan']);
-    $billedToAddress = $conn->real_escape_string($_POST['billedToAddress']);
+    // ... your existing update code for invoices ...
 
     $conn->begin_transaction();
 
     try {
-       
-        $sql = "INSERT INTO invoices (
-                    invoice_date, billed_by_name, billed_by_pan, billed_by_address,
-                    billed_to_client_company_name, billed_to_pan, billed_to_address
-                ) VALUES (
-                    '$invoiceDate', '$billedByName', '$billedByPan', '$billedByAddress',
-                    '$billedToName', '$billedToPan', '$billedToAddress'
-                )";
+        // (1) Update invoice basic info (if needed)
+        // (you already did this in your code)
 
-        if (!$conn->query($sql)) {
-            throw new Exception("Error inserting invoice: " . $conn->error);
+        // (2) Fetch current invoice_id
+        $invoiceId = $conn->real_escape_string($_POST['invoiceId']);
+
+        // (3) Get existing item IDs from DB
+        $existingItemIds = [];
+        $existingItemsQuery = $conn->query("SELECT id FROM invoice_items WHERE invoice_id = '$invoiceId'");
+        while ($row = $existingItemsQuery->fetch_assoc()) {
+            $existingItemIds[] = $row['id'];
         }
 
-        $lastInsertId = $conn->insert_id;
-        $invoiceId = 'INV-' . str_pad($lastInsertId, 5, '0', STR_PAD_LEFT);
+        // (4) Track submitted item IDs
+        $submittedItemIds = [];
 
-        $updateSql = "UPDATE invoices SET invoice_id = '$invoiceId' WHERE id = $lastInsertId";
-        if (!$conn->query($updateSql)) {
-            throw new Exception("Error updating invoice ID: " . $conn->error);
-        }
-
+        // (5) Loop through posted items
         if (!empty($_POST['items'])) {
             foreach ($_POST['items'] as $item) {
-                $taskTitle = $conn->real_escape_string($item['title']);
+                $itemId = isset($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
+                $title = $conn->real_escape_string($item['title']);
                 $hours = $conn->real_escape_string($item['hours']);
                 $rate = $conn->real_escape_string($item['rate']);
 
-                $itemSql = "INSERT INTO invoice_items (invoice_id, task_title, hours, rate)
-                            VALUES ('$invoiceId', '$taskTitle', '$hours', '$rate')";
-
-                if (!$conn->query($itemSql)) {
-                    throw new Exception("Error inserting invoice item: " . $conn->error);
+                if ($itemId) {
+                    // Update existing item
+                    $submittedItemIds[] = $itemId;
+                    $updateSql = "UPDATE invoice_items SET 
+                                    task_title = '$title', 
+                                    hours = '$hours', 
+                                    rate = '$rate' 
+                                  WHERE id = $itemId AND invoice_id = '$invoiceId'";
+                    if (!$conn->query($updateSql)) {
+                        throw new Exception("Error updating item ID $itemId: " . $conn->error);
+                    }
+                } else {
+                    // Insert new item
+                    $insertSql = "INSERT INTO invoice_items (invoice_id, task_title, hours, rate) 
+                                  VALUES ('$invoiceId', '$title', '$hours', '$rate')";
+                    if (!$conn->query($insertSql)) {
+                        throw new Exception("Error inserting new item: " . $conn->error);
+                    }
                 }
             }
         }
 
+        // (6) Delete removed items
+        $toDelete = array_diff($existingItemIds, $submittedItemIds);
+        if (!empty($toDelete)) {
+            $deleteIds = implode(',', array_map('intval', $toDelete));
+            $deleteSql = "DELETE FROM invoice_items WHERE id IN ($deleteIds) AND invoice_id = '$invoiceId'";
+            if (!$conn->query($deleteSql)) {
+                throw new Exception("Error deleting items: " . $conn->error);
+            }
+        }
+
         $conn->commit();
-        $_SESSION['success_invoice_id'] = $invoiceId;
-        header('Location: ' . BASE_URL . '/invoices/index.php');
+        header("Location: " . BASE_URL . "/invoices/index.php");
         exit;
     } catch (Exception $e) {
         $conn->rollback();
         echo "<div class='alert alert-danger'>Error: " . $e->getMessage() . "</div>";
     }
 }
+
 ?>
 
 <div class="row">
