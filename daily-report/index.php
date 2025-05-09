@@ -70,7 +70,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($projects as $key => $row) { ?>
+                        <?php 
+                        foreach ($projects as $key => $row) { ?>
                             <tr>
                                 <td><?php echo $key + 1; ?></td>
                                 <td><?php echo htmlspecialchars($row['name']); ?></td>

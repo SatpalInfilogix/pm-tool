@@ -185,7 +185,8 @@
             }
         });
 
-        const existingTasks = invoiceItems;
+
+        const invoiceItems = <?= json_encode($invoiceItems ?? []); ?>;
         let itemCount = 0;
 
 
@@ -195,42 +196,44 @@
             const rate = task.rate !== undefined ? task.rate : '';
             const id = task.id || '';
 
+
             return `
-            <input type="hidden" name="items[${count}][id]" value="${id}">
-            <div class="row g-3 mb-3 invoice-item" data-index="${count}">
-                <div class="col-md-6">
-                    <label class="form-label">Task Title</label>
-                    <input type="text" class="form-control" name="items[${count}][id]" value="${id}" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Hours</label>
-                    <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Rate</label>
-                    <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    ${isSingle
-                        ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
-                        : '<button type="button" class="btn btn-danger   remove-item">Remove</button>'}
-                </div>
-            </div>
-        `;
+<input type="hidden" name="items[${count}][id]" value="${id}">
+<div class="row g-3 mb-3 invoice-item" data-index="${count}">
+    <div class="col-md-6">
+        <label class="form-label">Task Title</label>
+<input type="text" class="form-control" name="items[${count}][title]" value="${title}" required>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Hours</label>
+        <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Rate</label>
+        <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
+    </div>
+   <div class="col-md-2 d-flex flex-column justify-content-end">
+    <label class="form-label d-none">&nbsp;</label>
+    ${isSingle
+        ? '<button type="button" class="btn btn-primary w-100 add-task mt-auto">Add Task</button>'
+        : '<button type="button" class="btn btn-danger w-100 remove-item mt-auto">Remove</button>'}
+</div>
+
+</div>
+`;
         }
 
-
-        if (existingTasks.length > 0) {
-            $('#invoiceItemsContainer').empty();
-            existingTasks.forEach((task, index) => {
+        if (invoiceItems.length > 0) {
+            invoiceItems.forEach((task, index) => {
                 itemCount = index + 1;
-                const isSingle = existingTasks.length === 1;
+                const isSingle = invoiceItems.length === 1;
                 $('#invoiceItemsContainer').append(renderTask(itemCount, task, isSingle));
             });
         } else {
             itemCount = 1;
             $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
         }
+
 
 
         $('#invoiceItemsContainer').on('click', '.add-task', function() {

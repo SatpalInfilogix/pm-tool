@@ -28,11 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['project_status'])) {
 }
 
 // Fetch the project status after update or on GET
-$sql = "SELECT ps.*, 
-               p.name AS project_name, 
-               p.description AS project_description
-        FROM project_status ps
-        JOIN projects p ON ps.project_id = p.id
+ $sql = "SELECT ps.id, p.name, p.type, p.name AS project_name, ps.chargable_hours, ps.non_chargable_hours, ps.update,
+                ps.created_at, ps.updated_at, u.name AS employee_name
+            FROM project_status ps
+            INNER JOIN projects p ON ps.project_id = p.id
+            LEFT JOIN employee_projects ep ON p.id = ep.project_id
+            LEFT JOIN users u ON ep.employee_id = u.id
         WHERE ps.id = $id";
 
 // Run the query
@@ -40,6 +41,7 @@ $query = mysqli_query($conn, $sql);
 
 // Fetch result
 $project = mysqli_fetch_assoc($query);
+
 
 // Debug output to check what's returned
 
@@ -64,6 +66,8 @@ if (isset($_POST['project_status'])) {
         echo "<div class='alert alert-danger'>Error updating project status: " . mysqli_error($conn) . "</div>";
     }
 };
+
+
 ?>
 <div class="row">
     <div class="col-12">
