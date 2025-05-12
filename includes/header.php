@@ -224,9 +224,9 @@ $cacheBuster = '?v=' . time();
                                 <span>Holidays</span>
                             </a>
                         </li>
-                        <li>
+                        <li >
                             <a href="<?php echo BASE_URL; ?>/attendance/index.php" class="waves-effect">
-                                <i class="bx bx-calendar"></i>
+                              <i class="bx bx-calendar-check"></i>
                                 <span>Attendance</span>
                             </a>
                         </li>
