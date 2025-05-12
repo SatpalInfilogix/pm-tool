@@ -18,11 +18,45 @@ if (isset($_POST['add-invoices'])) {
     $conn->begin_transaction();
 
     try {
-        // (1) Update invoice basic info (if needed)
-        // (you already did this in your code)
-
-        // (2) Fetch current invoice_id
+        // (2) Get invoice data from POST and sanitize
         $invoiceId = $conn->real_escape_string($_POST['invoiceId']);
+        $invoiceDate = $conn->real_escape_string($_POST['invoiceDate']);
+        $billedToName = $conn->real_escape_string($_POST['billedToName']);
+        $billedToPan = $conn->real_escape_string($_POST['billedToPan']);
+        $billedToAddress = $conn->real_escape_string($_POST['billedToAddress']);
+        $billedByName = $conn->real_escape_string($_POST['billedByName']);
+        $billedByPan = $conn->real_escape_string($_POST['billedByPan']);
+        $billedByAddress = $conn->real_escape_string($_POST['billedByAddress']);
+
+        // (3) Insert or Update invoice
+        $checkExisting = $conn->query("SELECT id FROM invoices WHERE invoice_id = '$invoiceId'");
+        if ($checkExisting->num_rows > 0) {
+            // Update existing invoice
+            $updateInvoiceSql = "UPDATE invoices SET 
+        invoice_date = '$invoiceDate',
+        billed_to_client_company_name = '$billedToName',
+        billed_to_pan = '$billedToPan',
+        billed_to_address = '$billedToAddress',
+        billed_by_name = '$billedByName',
+        billed_by_pan = '$billedByPan',
+        billed_by_address = '$billedByAddress'
+        WHERE invoice_id = '$invoiceId'";
+            if (!$conn->query($updateInvoiceSql)) {
+                throw new Exception("Error updating invoice: " . $conn->error);
+            }
+        } else {
+            // Insert new invoice
+            $insertInvoiceSql = "INSERT INTO invoices 
+        (invoice_id, invoice_date, billed_to_client_company_name, billed_to_pan, billed_to_address,
+         billed_by_name, billed_by_pan, billed_by_address) 
+        VALUES (
+            '$invoiceId', '$invoiceDate', '$billedToName', '$billedToPan', '$billedToAddress',
+            '$billedByName', '$billedByPan', '$billedByAddress'
+        )";
+            if (!$conn->query($insertInvoiceSql)) {
+                throw new Exception("Error inserting invoice: " . $conn->error);
+            }
+        }
 
         // (3) Get existing item IDs from DB
         $existingItemIds = [];
