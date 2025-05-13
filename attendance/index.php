@@ -1,6 +1,6 @@
 <?php
 ob_start();
-require_once '../includes/db.php';
+require_once '../includes/db.php';  
 require_once '../includes/header.php';
 
 $userRole = $userProfile['role'] ?? null;
@@ -13,13 +13,15 @@ $dateRange = $_GET['dateRange'] ?? '';
 
 $filters = [];
 
+// Build the base query
 if ($userRole === 'admin' || $userRole === 'hr') {
     $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
               FROM attendance a 
               JOIN users u ON a.employee_id = u.id";
 
     if (!empty($employeeFilter)) {
-        $filters[] = "u.name = '" . mysqli_real_escape_string($conn, $employeeFilter) . "'";
+        $employeeId = (int)$employeeFilter;
+        $filters[] = "u.id = $employeeId";
     }
 } else {
     $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
@@ -28,17 +30,20 @@ if ($userRole === 'admin' || $userRole === 'hr') {
               WHERE u.id = $userId";
 }
 
+// Apply status filter
 if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
     $filters[] = "a.status = '" . mysqli_real_escape_string($conn, $statusFilter) . "'";
 }
 
-if (!empty($dateRange) && strpos($dateRange, 'to') !== false) {
+// Apply date range filter
+if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     [$startDate, $endDate] = explode(' to ', $dateRange);
     $startDate = date('Y-m-d', strtotime($startDate));
     $endDate = date('Y-m-d', strtotime($endDate));
     $filters[] = "a.date BETWEEN '$startDate' AND '$endDate'";
 }
 
+// Append filters to query
 if (!empty($filters)) {
     if (strpos($query, 'WHERE') !== false) {
         $query .= ' AND ' . implode(' AND ', $filters);
@@ -48,33 +53,9 @@ if (!empty($filters)) {
 }
 
 $query .= " ORDER BY a.date DESC, u.name ASC";
+
+// Execute query
 $result = mysqli_query($conn, $query);
-
-// Export CSV only if export=1
-if (isset($_GET["export"])) {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=data.csv');
-
-    $output = fopen("php://output", "w");
-    fputcsv($output, array('Index', 'Date', 'Employee Name', 'Status', 'Note'));
-
-    $index = 1;
-    while ($row = mysqli_fetch_assoc($result)) {
-        fputcsv($output, [
-            $index++,
-            $row['date'],
-            $row['employee_name'],
-            ucfirst(str_replace('_', ' ', $row['status'])),
-            $row['note']
-        ]);
-    }
-
-    fclose($output);
-    exit;
-}
-
-
-
 ?>
 
 
@@ -111,11 +92,12 @@ if (isset($_GET["export"])) {
                 <select class="form-control" id="employeeFilter" name="employee">
                     <option value="">All</option>
                     <?php
-                    $employeeQuery = mysqli_query($conn, "SELECT DISTINCT name FROM users");
+                    $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users ORDER BY name");
                     while ($emp = mysqli_fetch_assoc($employeeQuery)) {
-                        $selected = ($employeeFilter === $emp['name']) ? 'selected' : '';
-                        echo '<option value="' . htmlspecialchars($emp['name']) . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
+                        $selected = ($employeeFilter == $emp['id']) ? 'selected' : '';
+                        echo '<option value="' . $emp['id'] . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
                     }
+
                     ?>
                 </select>
             </div>
@@ -136,7 +118,15 @@ if (isset($_GET["export"])) {
         </div>
 
         <button type="submit" class="btn btn-secondary">Filter</button>
-        <button type="submit" name="export" value="1" class="btn btn-success">Export</button>
+        <a class="btn btn-success"
+            href="export.php?<?php echo http_build_query([
+                                    'status' => $statusFilter,
+                                    'employee_id' => $employeeFilter,
+                                    'dateRange' => $dateRange
+                                ]); ?>">
+            Export
+        </a>
+
 
     </form>
 
