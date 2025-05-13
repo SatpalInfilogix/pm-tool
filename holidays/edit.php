@@ -41,6 +41,11 @@ if (isset($_GET['id'])) {
 <?php }
     }
 } ?>
+<div class="card">
+    <div class="card-body">
+        
 <?php include './form.php' ?>
 
+    </div>
+</div>
 <?php require_once '../includes/footer.php'; ?>
