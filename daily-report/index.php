@@ -5,7 +5,6 @@
     $userRole = $userProfile['role'];
     $date_filter = isset($_GET['date-filter']) ? $_GET['date-filter'] : date('Y-m-d');
     $date = date('Y-m-d', strtotime($date_filter));
-    
 
 
     // Core query
@@ -71,7 +70,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($projects as $key => $row) { ?>
+                        <?php 
+                        foreach ($projects as $key => $row) { ?>
                             <tr>
                                 <td><?php echo $key + 1; ?></td>
                                 <td><?php echo htmlspecialchars($row['name']); ?></td>

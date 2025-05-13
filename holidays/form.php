@@ -20,11 +20,11 @@
         <div class="col-md-3">
             <div class="mb-3">
                 <label for="type">Type</label> <span class="text-danger">*</span>
-                <select class="form-select" name="type" required>
+                <select class="form-select text-uppercase" name="type" required>
                     <option value="" disabled <?php echo (!isset($row['type']) || $row['type'] == '') ? 'selected' : ''; ?>>Select Type</option>
-                    <option value="public" <?php echo (isset($row['type']) && $row['type'] == 'public') ? 'selected' : ''; ?>>Public</option>
-                    <option value="company" <?php echo (isset($row['type']) && $row['type'] == 'company') ? 'selected' : ''; ?>>Company</option>
-                    <option value="regional" <?php echo (isset($row['type']) && $row['type'] == 'regional') ? 'selected' : ''; ?>>Regional</option>
+                    <option value="Public" <?php echo (isset($row['type']) && $row['type'] == 'Public') ? 'selected' : ''; ?>>Public</option>
+                    <option value="Company" <?php echo (isset($row['type']) && $row['type'] == 'Company') ? 'selected' : ''; ?>>Company</option>
+                    <option value="Regional" <?php echo (isset($row['type']) && $row['type'] == 'Regional') ? 'selected' : ''; ?>>Regional</option>
                 </select>
 
             </div>

@@ -1,48 +1,49 @@
 <?php
+ob_start();
+require_once '../includes/db.php';  
 require_once '../includes/header.php';
 
-// ✅ Get logged-in user role & ID
 $userRole = $userProfile['role'] ?? null;
 $userId = $userProfile['id'] ?? 0;
 $validStatuses = ['present', 'absent', 'late', 'half_day', 'short_leave'];
 
-// ✅ Get filter values from GET
 $statusFilter = $_GET['status'] ?? '';
 $employeeFilter = $_GET['employee'] ?? '';
 $dateRange = $_GET['dateRange'] ?? '';
 
-// ✅ Build the query with dynamic filters
 $filters = [];
 
+// Build the base query
 if ($userRole === 'admin' || $userRole === 'hr') {
-    $query = "SELECT a.id, u.name AS employee_name, a.status, a.note, a.date 
+    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
               FROM attendance a 
               JOIN users u ON a.employee_id = u.id";
 
     if (!empty($employeeFilter)) {
-        $filters[] = "u.name = '" . mysqli_real_escape_string($conn, $employeeFilter) . "'";
+        $employeeId = (int)$employeeFilter;
+        $filters[] = "u.id = $employeeId";
     }
 } else {
-    $query = "SELECT a.id, u.name AS employee_name, a.status, a.note, a.date 
+    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
               FROM attendance a 
               JOIN users u ON a.employee_id = u.id 
               WHERE u.id = $userId";
 }
 
+// Apply status filter
 if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
     $filters[] = "a.status = '" . mysqli_real_escape_string($conn, $statusFilter) . "'";
 }
 
-
-// ✅ Date range filter
-if (!empty($dateRange) && strpos($dateRange, 'to') !== false) {
+// Apply date range filter
+if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     [$startDate, $endDate] = explode(' to ', $dateRange);
     $startDate = date('Y-m-d', strtotime($startDate));
     $endDate = date('Y-m-d', strtotime($endDate));
     $filters[] = "a.date BETWEEN '$startDate' AND '$endDate'";
 }
 
-// ✅ Add filters to query
+// Append filters to query
 if (!empty($filters)) {
     if (strpos($query, 'WHERE') !== false) {
         $query .= ' AND ' . implode(' AND ', $filters);
@@ -53,6 +54,7 @@ if (!empty($filters)) {
 
 $query .= " ORDER BY a.date DESC, u.name ASC";
 
+// Execute query
 $result = mysqli_query($conn, $query);
 ?>
 
@@ -86,15 +88,16 @@ $result = mysqli_query($conn, $query);
 
         <?php if ($userRole === 'admin' || $userRole === 'hr') { ?>
             <div>
-                <label for="employee">Employee:</label>
-                <select class="form-control" id="employee" name="employee">
+                <label for="employeeFilter">Employee:</label>
+                <select class="form-control" id="employeeFilter" name="employee">
                     <option value="">All</option>
                     <?php
-                    $employeeQuery = mysqli_query($conn, "SELECT DISTINCT name FROM users");
+                    $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users ORDER BY name");
                     while ($emp = mysqli_fetch_assoc($employeeQuery)) {
-                        $selected = ($employeeFilter === $emp['name']) ? 'selected' : '';
-                        echo '<option value="' . htmlspecialchars($emp['name']) . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
+                        $selected = ($employeeFilter == $emp['id']) ? 'selected' : '';
+                        echo '<option value="' . $emp['id'] . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
                     }
+
                     ?>
                 </select>
             </div>
@@ -115,6 +118,16 @@ $result = mysqli_query($conn, $query);
         </div>
 
         <button type="submit" class="btn btn-secondary">Filter</button>
+        <a class="btn btn-success"
+            href="export.php?<?php echo http_build_query([
+                                    'status' => $statusFilter,
+                                    'employee_id' => $employeeFilter,
+                                    'dateRange' => $dateRange
+                                ]); ?>">
+            Export
+        </a>
+
+
     </form>
 
 
@@ -131,29 +144,23 @@ $result = mysqli_query($conn, $query);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (mysqli_num_rows($result) > 0): ?>
-                        <?php $i = 1;
-                        while ($row = mysqli_fetch_assoc($result)): ?>
-                            <tr>
-                                <td><?php echo $i++; ?></td>
-                                <td><?php echo htmlspecialchars($row['date']); ?></td>
-                                <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php
-                                                            echo ($row['status'] === 'present') ? 'success' : (($row['status'] === 'absent') ? 'danger' : (($row['status'] === 'late') ? 'warning' : (($row['status'] === 'half_day') ? 'info' : (($row['status'] === 'short_leave') ? 'secondary' : 'dark'))));
-                                                            ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
-                                    </span>
-                                </td>
-
-                                <td><?php echo htmlspecialchars($row['note']); ?></td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php else: ?>
+                    <?php $i = 1;
+                    while ($row = mysqli_fetch_assoc($result)): ?>
                         <tr>
-                            <td colspan="5" class="text-center">No attendance records found.</td>
+                            <td><?php echo $i++; ?></td>
+                            <td><?php echo htmlspecialchars($row['date']); ?></td>
+                            <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                            <td>
+                                <span class="badge bg-<?php
+                                                        echo ($row['status'] === 'present') ? 'success' : (($row['status'] === 'absent') ? 'danger' : (($row['status'] === 'late') ? 'warning' : (($row['status'] === 'half_day') ? 'info' : (($row['status'] === 'short_leave') ? 'secondary' : 'dark'))));
+                                                        ?>">
+                                    <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
+                                </span>
+                            </td>
+
+                            <td><?php echo htmlspecialchars($row['note']); ?></td>
                         </tr>
-                    <?php endif; ?>
+                    <?php endwhile; ?>
                 </tbody>
             </table>
 
@@ -165,14 +172,14 @@ $result = mysqli_query($conn, $query);
 
     <script>
         $(document).ready(function() {
-            // Initialize Date Range Picker without any limitations
+
             $('#dateRange').daterangepicker({
-                autoUpdateInput: false, // Don't update the input text automatically
+                autoUpdateInput: false,
                 locale: {
                     format: 'YYYY-MM-DD',
-                    cancelLabel: 'Clear' // Add a clear button
+                    cancelLabel: 'Clear'
                 },
-                opens: 'left' // Open to the left side
+                opens: 'left'
             });
 
             $('#dateRange').on('apply.daterangepicker', function(ev, picker) {
@@ -183,7 +190,6 @@ $result = mysqli_query($conn, $query);
                 $(this).val('');
             });
 
-            // Initialize DataTable
             const table = $('#attendanceTable').DataTable({
                 paging: true,
                 searching: true,
@@ -193,17 +199,14 @@ $result = mysqli_query($conn, $query);
                 autoWidth: false
             });
 
-            // Custom DataTable filters
             $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
                 const employeeName = $('#employeeFilter').val();
-                const rowName = data[2]; // 3rd column = employee name
+                const rowName = data[2];
 
-                // Filter by employee name
                 if (employeeName && employeeName !== rowName) {
                     return false;
                 }
 
-                // Filter by status
                 const statusFilter = $('#statusFilter').val();
                 const rowStatus = $('<div>').html(data[3]).text().trim().toLowerCase();
                 const filterValue = statusFilter.toLowerCase();
@@ -216,10 +219,9 @@ $result = mysqli_query($conn, $query);
             });
 
             $('#dateFilterForm').on('submit', function() {
-                return true; // let the form submit normally (no client-side DataTable filtering)
+                return true;
             });
 
-            // Delete button handling
             $('.delete-btn').on('click', function() {
                 const id = $(this).data('id');
                 if (!confirm("Are you sure you want to delete this record?")) return;
