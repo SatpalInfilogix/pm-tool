@@ -21,9 +21,9 @@
 <script src="<?php echo BASE_URL; ?>/assets/libs/bootstrap-timepicker/js/bootstrap-timepicker.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/libs/echarts/echarts.min.js"></script>
 <script src="<?php echo BASE_URL; ?>/assets/js/pages/echarts.init.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
 
 
