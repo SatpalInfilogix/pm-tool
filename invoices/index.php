@@ -36,28 +36,30 @@ $userRole = $userProfile['role']; ?>
                 $sql = "SELECT * FROM invoices ORDER BY invoice_date DESC";
                 $result = $conn->query($sql);
 
+                if ($result && $result->num_rows > 0) {
+                    $invoices = $result->fetch_all(MYSQLI_ASSOC);
+                    $count = 1;
+                    foreach ($invoices as $row) {
+                        echo "<tr>";
+                        echo "<td>" . $count++ . "</td>";
+                        echo "<td>" . htmlspecialchars($row['invoice_id']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['invoice_date']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['billed_by_name']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['billed_to_client_company_name']) . "</td>";
+                        echo "<td>";
+                        echo "<a href='./edit.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'><i class='bx bx-edit fs-5'></i></a> ";
 
-                $invoices = $result->fetch_all(MYSQLI_ASSOC);
-                $count = 1;
-                foreach ($invoices as $row) {
-                    echo "<tr>";
-                    echo "<td>" . $count++ . "</td>";
-                    echo "<td>" . htmlspecialchars($row['invoice_id']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['invoice_date']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['billed_by_name']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['billed_to_client_company_name']) . "</td>";
-                    echo "<td>";
-                    echo "<a href='./edit.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'><i class='bx bx-edit fs-5'></i></a> ";
+                        if ($userRole === 'admin' || $userRole === 'hr') {
+                            echo "<button class='btn btn-danger btn-sm delete-btn' data-table-name='invoices' data-id='" . htmlspecialchars($row['id']) . "'><i class='bx bx-trash fs-5'></i></button> ";
+                        }
 
-                    if ($userRole === 'admin' || $userRole === 'hr') {
-                        echo "<button class='btn btn-danger btn-sm delete-btn' data-table-name='invoices' data-id='" . htmlspecialchars($row['id']) . "'><i class='bx bx-trash fs-5'></i></button> ";
+                        echo "<a href='./download.php?id=" . $row['id'] . "' class='btn btn-success btn-sm'><i class='bx bx-download fs-5'></i></a>";
+                        echo "</td>";
+                        echo "</tr>";
                     }
-
-                    echo "<a href='./download.php?id=" . $row['id'] . "' class='btn btn-success btn-sm'><i class='bx bx-download fs-5'></i></a>";
-                    echo "</td>";
-                    echo "</tr>";
+                } else {
+                    echo "<tr><td colspan='6'>No invoices found.</td></tr>";
                 }
-
                 ?>
             </tbody>
 
@@ -66,15 +68,16 @@ $userRole = $userProfile['role']; ?>
 </div>
 
 <script>
-    $(document).ready(function() {
-        $('#invoiceTable').DataTable({
-            "paging": true,
-            "searching": true,
-            "ordering": true,
-            "info": true,
-            "lengthMenu": [10, 25, 50, 100],
-            "autoWidth": false
-        });
+
+          $(document).ready(function() {
+              $('#invoiceTable').DataTable({
+                  "paging": true,
+                  "searching": true,
+                  "ordering": true,
+                  "info": true,
+                  "lengthMenu": [10, 25, 50, 100],
+                  "autoWidth": false
+              });
         setTimeout(() => {
             document.getElementById('update-success-msg')?.remove();
         }, 3000);

@@ -2,6 +2,7 @@
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-between gap-4 flex-wrap mb-4">
+
                 <div class="flex-fill" style="max-width: 200px;">
                     <label for="invoiceId" class="form-label">Invoice ID</label>
                     <input type="text" class="form-control" id="invoiceId" name="invoiceId" readonly
@@ -12,7 +13,7 @@
                     <label for="invoiceDate" class="form-label">Invoice Date</label>
                     <input type="text" class="form-control" id="invoiceDate" name="invoiceDate"
                         value="<?= isset($invoice['invoice_date']) ? htmlspecialchars($invoice['invoice_date']) : '' ?>"
-                        autocomplete="off">
+                        outocomplete="off">
                 </div>
             </div>
 
@@ -35,6 +36,7 @@
                             rows="2"><?= isset($invoice['billed_to_address']) ? htmlspecialchars($invoice['billed_to_address']) : '' ?></textarea>
                     </div>
                 </div>
+
 
                 <div class="col-md-6 ps-md-3 mb-3">
                     <h6 class="mb-2"><b>Billed By:</b></h6>
@@ -71,14 +73,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
-        // Date Picker
+    $(document).ready(function () {
+
         $("#invoiceDate").datepicker({
             format: 'yyyy-mm-dd',
             autoclose: true
         }).datepicker('setDate', new Date());
 
-        // Form Validation
         $("#invoices_form").validate({
             rules: {
                 invoiceId: {
@@ -121,6 +122,7 @@
                 },
                 'items[hours][]': {
                     required: true,
+
                 },
                 'items[rate][]': {
                     required: true,
@@ -169,6 +171,8 @@
                 },
                 'items[hours][]': {
                     required: "Please enter the hours",
+
+
                 },
                 'items[rate][]': {
                     required: "Please enter the rate",
@@ -176,51 +180,48 @@
                     min: "Rate must be greater than or equal to 0"
                 }
             },
-            submitHandler: function(form) {
+            submitHandler: function (form) {
                 form.submit();
             }
         });
 
-        const existingTasks = <?= json_encode($invoiceItems ?? []); ?>;
+        const existingTasks = <?= json_encode($invoice['invoice_items'] ?? []) ?>;
         let itemCount = 0;
 
-        // Function to render tasks
+
         function renderTask(count, task = {}, isSingle = false) {
-            const title = task.task_title || ''; // Default to empty string if not available
-            const hours = task.hours !== undefined ? task.hours : ''; // Default to empty string if not available
-            const rate = task.rate !== undefined ? task.rate : ''; // Default to empty string if not available
-            const id = task.id || ''; // Default to empty string if ID is not available
+            const title = task.task_title || '';
+            const hours = task.hours !== undefined ? task.hours : '';
+            const rate = task.rate !== undefined ? task.rate : '';
+            const id = task.id || '';
+
             return `
-            <input type="hidden" name="items[${count}][id]" value="${id}">
-            <div class="row g-3 mb-3 invoice-item" data-index="${count}">
-                <div class="col-md-6">
-                    <label class="form-label">Task Title</label>
-                    <input type="text" class="form-control item-title" name="items[${count}][title]" value="${title}" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Hours</label>
-                    <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Rate</label>
-                    <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
-                </div>
-                <div class="col-md-2 d-flex justify-content-center align-items-center">
-                    ${isSingle
-                        ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
-                        : '<button type="button" class="btn btn-danger remove-item">Remove</button>'
-                    }
-                </div>
+        <input type="hidden" name="items[${count}][id]" value="${id}">
+        <div class="row g-3 mb-3 invoice-item" data-index="${count}">
+            <div class="col-md-6">
+                <label class="form-label">Task Title</label>
+                <input type="text" class="form-control" name="items[${count}][title]" value="${title}" required>
             </div>
-
-
-            `;
+            <div class="col-md-2">
+                <label class="form-label">Hours</label>
+                <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Rate</label>
+                <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                ${isSingle
+                    ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
+                    : '<button type="button" class="btn btn-danger   remove-item">Remove</button>'}
+            </div>
+        </div>
+    `;
         }
 
 
-
-        // Render tasks if available
         if (existingTasks.length > 0) {
+            $('#invoiceItemsContainer').empty();
             existingTasks.forEach((task, index) => {
                 itemCount = index + 1;
                 const isSingle = existingTasks.length === 1;
@@ -231,51 +232,31 @@
             $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
         }
 
-        // Handling Add and Remove task functionality
-        $('#invoiceItemsContainer').on('click', '.add-task', function() {
+
+        $('#invoiceItemsContainer').on('click', '.add-task', function () {
+
             $(this)
                 .removeClass('btn-primary add-task')
                 .addClass('btn-danger remove-item')
                 .text('Remove');
 
+
             itemCount++;
             $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
         });
 
-        $('#invoiceItemsContainer').on('click', '.remove-item', function() {
+
+        $('#invoiceItemsContainer').on('click', '.remove-item', function () {
             $(this).closest('.invoice-item').remove();
+
+
             const items = $('#invoiceItemsContainer .invoice-item');
             if (items.length === 1) {
-                const btnContainer = items.eq(0).find('.col-md-2').last();
+                const btnContainer = items.eq(0).find('.col-md-1');
                 btnContainer.html('<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>');
             }
         });
+
     });
-    $(document).ready(function() {
-        let taskCounter = 0;
 
-        invoiceItems.forEach(item => {
-            const html = generateInvoiceItemRow(taskCounter, item.task_title, item.hours, item.rate, item.id, false);
-            $('#invoice-items-container').append(html);
-            taskCounter++;
-        });
-
-        // Add empty row if there are no items
-        if (invoiceItems.length === 0) {
-            const html = generateInvoiceItemRow(taskCounter, '', '', '', '', true);
-            $('#invoice-items-container').append(html);
-        }
-
-        // Handle Add Task button
-        $(document).on('click', '.add-task', function() {
-            const html = generateInvoiceItemRow(taskCounter, '', '', '', '', false);
-            $('#invoice-items-container').append(html);
-            taskCounter++;
-        });
-
-        // Handle Remove button
-        $(document).on('click', '.remove-item', function() {
-            $(this).closest('.invoice-item').remove();
-        });
-    });
 </script>
