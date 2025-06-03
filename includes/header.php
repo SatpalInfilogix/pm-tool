@@ -99,7 +99,7 @@ $cacheBuster = '?v=' . time();
                             <div class="p-3">
                                 <div class="row align-items-center">
                                     <div class="col">
-                                        <h6 class="m-0" key="t-notifications"> Notifications </h6>
+                                        <h6 class="m-0" key="t-notifications">   </h6>
                                     </div>
                                     <div class="col-auto">
                                         <a href="<?php echo BASE_URL; ?>/notifications.php" class="btn btn-sm btn-link font-size-14 text-center">view more</a>

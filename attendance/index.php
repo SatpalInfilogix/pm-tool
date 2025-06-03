@@ -1,11 +1,10 @@
 <?php
 ob_start();
-require_once '../includes/db.php';  
+require_once '../includes/db.php';
 require_once '../includes/header.php';
 
 $userRole = $userProfile['role'] ?? null;
-$userId = $userProfile['id'] ?? 0;
-$validStatuses = ['present', 'absent', 'late', 'half_day', 'short_leave'];
+$userId = (int)($userProfile['id'] ?? 0);
 
 $statusFilter = $_GET['status'] ?? '';
 $employeeFilter = $_GET['employee'] ?? '';
@@ -13,29 +12,22 @@ $dateRange = $_GET['dateRange'] ?? '';
 
 $filters = [];
 
-// Build the base query
 if ($userRole === 'admin' || $userRole === 'hr') {
-    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
-              FROM attendance a 
-              JOIN users u ON a.employee_id = u.id";
+    $query = "SELECT a.id, a.date, u.name AS employee_name, a.note, a.in_time, a.out_time, u.id AS employee_id
+          FROM attendance a
+          JOIN users u ON a.employee_id = u.id";
 
-    if (!empty($employeeFilter)) {
+    if (!empty($employeeFilter) && is_numeric($employeeFilter)) {
         $employeeId = (int)$employeeFilter;
         $filters[] = "u.id = $employeeId";
     }
 } else {
-    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note 
-              FROM attendance a 
-              JOIN users u ON a.employee_id = u.id 
+    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note, a.in_time, a.out_time, u.id AS employee_id
+              FROM attendance a
+              JOIN users u ON a.employee_id = u.id
               WHERE u.id = $userId";
 }
 
-// Apply status filter
-if (!empty($statusFilter) && in_array($statusFilter, $validStatuses)) {
-    $filters[] = "a.status = '" . mysqli_real_escape_string($conn, $statusFilter) . "'";
-}
-
-// Apply date range filter
 if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     [$startDate, $endDate] = explode(' to ', $dateRange);
     $startDate = date('Y-m-d', strtotime($startDate));
@@ -43,7 +35,6 @@ if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     $filters[] = "a.date BETWEEN '$startDate' AND '$endDate'";
 }
 
-// Append filters to query
 if (!empty($filters)) {
     if (strpos($query, 'WHERE') !== false) {
         $query .= ' AND ' . implode(' AND ', $filters);
@@ -54,129 +45,182 @@ if (!empty($filters)) {
 
 $query .= " ORDER BY a.date DESC, u.name ASC";
 
-// Execute query
 $result = mysqli_query($conn, $query);
-?>
 
+// Prepare an array to store rows after filtering by derived status
+$filteredRows = [];
+
+while ($row = mysqli_fetch_assoc($result)) {
+    $inTime = strtotime($row['in_time']);
+    $outTime = strtotime($row['out_time']);
+    $isInTimeValid = $inTime !== false && $row['in_time'] !== null && $row['in_time'] !== '00:00:00';
+    $isOutTimeValid = $outTime !== false && $row['out_time'] !== null && $row['out_time'] !== '00:00:00';
+
+    // Default derived status and badge class
+    $derivedStatus = "Absent";
+    $badgeClass = "danger";
+    $workedHours = '-';
+    $inTimeDisplay = '-';
+    $outTimeDisplay = '-';
+
+    if ($isInTimeValid && $isOutTimeValid) {
+        $seconds = $outTime - $inTime;
+        if ($seconds > 0) {
+            $hours = floor($seconds / 3600);
+            $minutes = floor(($seconds % 3600) / 60);
+            $workedHours = "{$hours}h {$minutes}m";
+
+            if ($hours >= 8) {
+                $derivedStatus = "Present";
+                $badgeClass = "success";
+            } elseif ($hours >= 6) {
+                $derivedStatus = "Short Leave";
+                $badgeClass = "secondary";
+            } elseif ($hours >= 3) {
+                $derivedStatus = "Half Day";
+                $badgeClass = "info";
+            } else {
+                $derivedStatus = "Absent";
+                $badgeClass = "danger";
+            }
+
+            $inTimeDisplay = date("h:i A", $inTime);
+            $outTimeDisplay = date("h:i A", $outTime);
+        }
+    }
+
+    // Normalize derived status for filtering
+    $normalizedDerivedStatus = strtolower(str_replace(' ', '_', $derivedStatus));
+
+    // Apply status filter if provided
+    if (empty($statusFilter) || $normalizedDerivedStatus === $statusFilter) {
+        $row['derived_status'] = $derivedStatus;
+        $row['badge_class'] = $badgeClass;
+        $row['worked_hours'] = $workedHours;
+        $row['in_time_display'] = $inTimeDisplay;
+        $row['out_time_display'] = $outTimeDisplay;
+
+        $filteredRows[] = $row;
+    }
+}
+?>
 
 <!DOCTYPE html>
 <html>
 
 <head>
+    <title>Attendance Records</title>
 </head>
 
 <body>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
-                <h4>Attendance Records</h4>
-                <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') { ?>
-                    <a href="./create.php" class="btn btn-primary d-flex">
-                        <i class="bx bx-plus me-1 fs-5"></i>Add Attendance
-                    </a>
-                <?php } ?>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
+                    <h4>Attendance Records</h4>
+                    <?php if ($userRole === 'admin' || $userRole === 'hr'): ?>
+                        <a href="./form.php" class="btn btn-primary d-flex">
+                            <i class="bx bx-plus me-1 fs-5"></i>Add Attendance
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
-    </div>
-    <form id="dateFilterForm" class="d-flex gap-2 align-items-end mb-3" method="GET">
-        <div>
-            <label for="dateRange">Date Range:</label>
-            <input type="text" class="form-control" name="dateRange" id="dateRange" autocomplete="off"
-                value="<?php echo htmlspecialchars($dateRange); ?>">
-        </div>
 
-        <?php if ($userRole === 'admin' || $userRole === 'hr') { ?>
+        <form id="dateFilterForm" class="d-flex gap-2 align-items-end mb-3" method="GET">
             <div>
-                <label for="employeeFilter">Employee:</label>
-                <select class="form-control" id="employeeFilter" name="employee">
+                <label for="dateRange">Date Range:</label>
+                <input type="text" class="form-control" name="dateRange" id="dateRange" autocomplete="off"
+                    value="<?php echo htmlspecialchars($dateRange); ?>">
+            </div>
+
+            <?php if ($userRole === 'admin' || $userRole === 'hr'): ?>
+                <div>
+                    <label for="employeeFilter">Employee:</label>
+                    <select class="form-control" id="employeeFilter" name="employee">
+                        <option value="">All</option>
+                        <?php
+                        $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users ORDER BY name");
+                        while ($emp = mysqli_fetch_assoc($employeeQuery)) {
+                            $selected = ($employeeFilter == $emp['id']) ? 'selected' : '';
+                            echo '<option value="' . (int)$emp['id'] . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
+                        }
+                        ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
+            <div>
+                <label for="statusFilter">Status:</label>
+                <select class="form-control" id="statusFilter" name="status">
                     <option value="">All</option>
                     <?php
-                    $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users ORDER BY name");
-                    while ($emp = mysqli_fetch_assoc($employeeQuery)) {
-                        $selected = ($employeeFilter == $emp['id']) ? 'selected' : '';
-                        echo '<option value="' . $emp['id'] . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
+                    $statuses = ['present', 'absent', 'half_day', 'short_leave'];
+                    foreach ($statuses as $status) {
+                        $selected = ($statusFilter === $status) ? 'selected' : '';
+                        echo "<option value=\"$status\" $selected>" . ucfirst(str_replace('_', ' ', $status)) . "</option>";
                     }
-
                     ?>
                 </select>
             </div>
-        <?php } ?>
 
-        <div>
-            <label for="statusFilter">Status:</label>
-            <select class="form-control" id="statusFilter" name="status">
-                <option value="">All</option>
-                <?php
-                $statuses = ['present', 'absent', 'late', 'half_day', 'short_leave'];
-                foreach ($statuses as $status) {
-                    $selected = ($statusFilter === $status) ? 'selected' : '';
-                    echo "<option value=\"$status\" $selected>" . ucfirst(str_replace('_', ' ', $status)) . "</option>";
-                }
-                ?>
-            </select>
-        </div>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a class="btn btn-success"
+                href="export.php?<?php echo http_build_query([
+                                        'status' => $statusFilter,
+                                        'employee' => $employeeFilter,
+                                        'dateRange' => $dateRange
+                                    ]); ?>">
+                Export
+            </a>
+        </form>
 
-        <button type="submit" class="btn btn-secondary">Filter</button>
-        <a class="btn btn-success"
-            href="export.php?<?php echo http_build_query([
-                                    'status' => $statusFilter,
-                                    'employee_id' => $employeeFilter,
-                                    'dateRange' => $dateRange
-                                ]); ?>">
-            Export
-        </a>
-
-
-    </form>
-
-
-    <div class="card">
-        <div class="card-body">
-            <table id="attendanceTable" class="table table-bordered table-striped mt-3">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Date</th>
-                        <th>Employee Name</th>
-                        <th>Status</th>
-                        <th>Note</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php $i = 1;
-                    while ($row = mysqli_fetch_assoc($result)): ?>
+        <div class="card">
+            <div class="card-body">
+                <table id="attendanceTable" class="table table-bordered table-striped mt-3">
+                    <thead>
                         <tr>
-                            <td><?php echo $i++; ?></td>
-                            <td><?php echo htmlspecialchars($row['date']); ?></td>
-                            <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                            <td>
-                                <span class="badge bg-<?php
-                                                        echo ($row['status'] === 'present') ? 'success' : (($row['status'] === 'absent') ? 'danger' : (($row['status'] === 'late') ? 'warning' : (($row['status'] === 'half_day') ? 'info' : (($row['status'] === 'short_leave') ? 'secondary' : 'dark'))));
-                                                        ?>">
-                                    <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
-                                </span>
-                            </td>
-
-                            <td><?php echo htmlspecialchars($row['note']); ?></td>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Employee Name</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Status</th>
+                            <th>Working Hours</th>
+                            <th>Note</th>
                         </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-
+                    </thead>
+                    <tbody>
+                        <?php
+                        $i = 1;
+                        foreach ($filteredRows as $row): ?>
+                            <tr>
+                                <td><?php echo $i++; ?></td>
+                                <td><?php echo htmlspecialchars($row['date']); ?></td>
+                                <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                                <td><?php echo $row['in_time_display']; ?></td>
+                                <td><?php echo $row['out_time_display']; ?></td>
+                                <td><span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>">
+                                        <?php echo htmlspecialchars($row['derived_status']); ?>
+                                    </span></td>
+                                <td><?php echo htmlspecialchars($row['worked_hours']); ?></td>
+                                <td><?php echo htmlspecialchars($row['note']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-
     </div>
-    </div>
-
 
     <script>
         $(document).ready(function() {
-
             $('#dateRange').daterangepicker({
                 autoUpdateInput: false,
                 locale: {
                     format: 'YYYY-MM-DD',
+                    applyLabel: 'Apply',
                     cancelLabel: 'Clear'
                 },
                 opens: 'left'
@@ -186,11 +230,11 @@ $result = mysqli_query($conn, $query);
                 $(this).val(picker.startDate.format('YYYY-MM-DD') + ' to ' + picker.endDate.format('YYYY-MM-DD'));
             });
 
-            $('#dateRange').on('cancel.daterangepicker', function() {
+            $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
                 $(this).val('');
             });
 
-            const table = $('#attendanceTable').DataTable({
+            $('#attendanceTable').DataTable({
                 paging: true,
                 searching: true,
                 ordering: true,
@@ -198,47 +242,11 @@ $result = mysqli_query($conn, $query);
                 lengthMenu: [10, 25, 50, 100],
                 autoWidth: false
             });
-
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-                const employeeName = $('#employeeFilter').val();
-                const rowName = data[2];
-
-                if (employeeName && employeeName !== rowName) {
-                    return false;
-                }
-
-                const statusFilter = $('#statusFilter').val();
-                const rowStatus = $('<div>').html(data[3]).text().trim().toLowerCase();
-                const filterValue = statusFilter.toLowerCase();
-                if (filterValue && filterValue !== rowStatus) {
-                    return false;
-                }
-
-
-                return true;
-            });
-
-            $('#dateFilterForm').on('submit', function() {
-                return true;
-            });
-
-            $('.delete-btn').on('click', function() {
-                const id = $(this).data('id');
-                if (!confirm("Are you sure you want to delete this record?")) return;
-
-                $.post('delete.php', {
-                    id
-                }, function() {
-                    alert('Record deleted successfully.');
-                    location.reload();
-                }).fail(function() {
-                    alert('Failed to delete the record.');
-                });
-            });
         });
     </script>
 
 </body>
 
 </html>
+
 <?php require_once '../includes/footer.php'; ?>
