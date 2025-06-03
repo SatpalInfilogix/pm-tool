@@ -36,7 +36,6 @@ $userRole = $userProfile['role']; ?>
                 $sql = "SELECT * FROM invoices ORDER BY invoice_date DESC";
                 $result = $conn->query($sql);
 
-                if ($result && $result->num_rows > 0) {
                     $invoices = $result->fetch_all(MYSQLI_ASSOC);
                     $count = 1;
                     foreach ($invoices as $row) {
@@ -57,9 +56,7 @@ $userRole = $userProfile['role']; ?>
                         echo "</td>";
                         echo "</tr>";
                     }
-                } else {
-                    echo "<tr><td colspan='6'>No invoices found.</td></tr>";
-                }
+               
                 ?>
             </tbody>
 
