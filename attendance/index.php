@@ -22,11 +22,13 @@ if ($userRole === 'admin' || $userRole === 'hr') {
         $filters[] = "u.id = $employeeId";
     }
 } else {
-    $query = "SELECT a.id, a.date, u.name AS employee_name, a.status, a.note, a.in_time, a.out_time, u.id AS employee_id
+    // Remove a.status here because it doesn't exist in DB
+    $query = "SELECT a.id, a.date, u.name AS employee_name, a.note, a.in_time, a.out_time, u.id AS employee_id
               FROM attendance a
               JOIN users u ON a.employee_id = u.id
               WHERE u.id = $userId";
 }
+
 
 if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     [$startDate, $endDate] = explode(' to ', $dateRange);
@@ -113,11 +115,10 @@ while ($row = mysqli_fetch_assoc($result)) {
 </head>
 
 <body>
-
-    <div class="container-fluid mt-4">
+    <div class="container-fluid ">
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
+                <div class="page-title-box pb-4 d-sm-flex align-items-center justify-content-between">
                     <h4>Attendance Records</h4>
                     <?php if ($userRole === 'admin' || $userRole === 'hr'): ?>
                         <a href="./form.php" class="btn btn-primary d-flex">

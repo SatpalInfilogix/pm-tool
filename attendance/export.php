@@ -1,14 +1,24 @@
 <?php
 require_once '../includes/db.php';
 
+// Get logged-in user info from session
+$userProfile = $_SESSION['user'] ?? null;
+$userRole = $userProfile['role'] ?? '';
+$currentUserId = (int)($userProfile['id'] ?? 0);
+
 $statusFilter = $_GET['status'] ?? '';
-$employeeFilter = $_GET['employee'] ?? '';
 $dateRange = $_GET['dateRange'] ?? '';
-$validStatuses = ['present', 'absent', 'half_day', 'short_leave'];
+
+// For admin/hr allow employee filter from GET, else force current user ID
+if (in_array($userRole, ['admin', 'hr'])) {
+    $employeeFilter = $_GET['employee'] ?? '';
+} else {
+    $employeeFilter = $currentUserId;
+}
 
 $filters = [];
-$query = "SELECT a.date, u.name AS employee_name, a.in_time, a.out_time, a.note 
-          FROM attendance a 
+$query = "SELECT a.date, u.name AS employee_name, a.in_time, a.out_time, a.note, u.id AS employee_id
+          FROM attendance a
           JOIN users u ON a.employee_id = u.id";
 
 // Employee filter

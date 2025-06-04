@@ -69,11 +69,19 @@ $userRole = $userProfile['role'];
                         <td><?php echo $row['start_date'] ?></td>
                         <td><?php echo $row['end_date'] ?></td>
                         <td>
-                            <span class="badge bg-<?php
-                                                    echo ($row['status'] === 'Approved') ? 'success' : (($row['status'] === 'Rejected') ? 'danger' : (($row['status'] === 'Pending') ? 'secondary' : 'dark'));
-                                                    ?>">
-                                <?php echo ucfirst(str_replace('_', ' ', $row['status'])); ?>
+                            <?php
+                            $status = ucfirst(strtolower(trim($row['status'])));
+                            $badgeClass = match ($status) {
+                                'Approved' => 'success',
+                                'Rejected' => 'danger',
+                                'Pending' => 'secondary',
+                                default => 'dark'
+                            };
+                            ?>
+                            <span class="badge bg-<?php echo $badgeClass; ?>">
+                                <?php echo $status; ?>
                             </span>
+
                         </td>
 
                         <td><?php echo $row['reason'] ?></td>
