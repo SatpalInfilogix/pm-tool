@@ -22,6 +22,7 @@ $extraNotifications = array_slice($notifications, 5);
     <div class="col-12">
         <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">Notifications </h4>
+            <span class="badge bg-info fs-6"><?php echo count($extraNotifications); ?> New</span>
         </div>
     </div>
 </div>

@@ -3,11 +3,10 @@ ob_start();
 require_once '../includes/header.php';
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 $userProfile = userProfile();
@@ -26,10 +25,19 @@ if (isset($_POST['edit_leave'])) {
     $oldStatus = $leaveData['status'];
 
     // Get new form data
-    $leave_type = $_POST['leave_type'];
+    $leave_type = ucfirst(strtolower($_POST['leave_type']));
     $start_date = $_POST['start_date'];
     $end_date =  $_POST['end_date'];
-    $status =  $_POST['status'];
+    $status = ucfirst(strtolower($_POST['status']));
+    $wasApprovedBefore = strtolower($oldStatus) === 'approved';
+    $isNowApproved = strtolower($status) === 'approved';
+    $isPaidLeave = strtolower($leave_type) === 'paid';
+    $daysRequested = (strtotime($end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
+    if ($isNowApproved && !$wasApprovedBefore && $isPaidLeave) {
+    // Store how many days were approved for audit/debug
+    $logSql = "INSERT INTO leave_logs (employee_id, leave_id, days, action) VALUES ('$employee_id', '$id', '$daysRequested', 'approved')";
+    mysqli_query($conn, $logSql);
+}
     $reason = $_POST['reason'];
 
     // Update leave record

@@ -105,10 +105,10 @@ require_once './includes/db.php'; // Make sure DB connection is available
     <!-- Milestone Alerts -->
     <?php
     $currentDate = date('Y-m-d');
-    $sql = "SELECT pm.milestone_name, pm.due_date, pm.status, p.name AS project_name
-            FROM project_milestones pm
-            JOIN projects p ON pm.project_id = p.id
-            WHERE pm.due_date <= '$currentDate'";
+    $sql = "SELECT pm.id, pm.milestone_name, pm.due_date, pm.status, p.name AS project_name
+        FROM project_milestones pm
+        JOIN projects p ON pm.project_id = p.id
+        WHERE pm.due_date <= '$currentDate'";
     $query = mysqli_query($conn, $sql);
     $milestones = [];
     if ($query) {
@@ -118,20 +118,37 @@ require_once './includes/db.php'; // Make sure DB connection is available
     }
     ?>
 
+    <?php
+    $hasDueMilestone = false;
+    foreach ($milestones as $row) {
+        $status = $row['status'] ?? '';
+        if ($status === 'not_started' || $status === 'completed') continue;
+        $hasDueMilestone = true;
+        break; // We only need to know that at least one exists
+    }
+    ?>
+
+    <?php if ($hasDueMilestone): ?>
+        <h4><b>Due Milestones:</b></h4>
+    <?php endif; ?>
+
     <?php foreach ($milestones as $row): ?>
         <?php
         $status = $row['status'] ?? '';
-        $statusLabel = $status ? ucfirst(str_replace('_', ' ', $status)) : 'Absent';
         if ($status === 'not_started' || $status === 'completed') continue;
         $alertClass = ($status === 'in_progress') ? 'warning' : 'secondary';
         ?>
-        <h4><b>Due Milestones:</b></h4>
-        <div class="alert alert-<?php echo $alertClass; ?> mb-3" role="alert">
+        <div class="alert alert-<?php echo $alertClass; ?> mb-3"
+            role="alert"
+            style="cursor: pointer;"
+            onclick="window.location.href='milestones/edit.php?id=<?= $row['id'] ?>'">
             <?php echo htmlspecialchars($row['project_name']); ?>'s milestone
             <strong><?php echo htmlspecialchars($row['milestone_name']); ?></strong> is due on
             <strong><?php echo htmlspecialchars($row['due_date']); ?></strong>.
         </div>
     <?php endforeach; ?>
+
+
 
     <!-- Attendance Section -->
     <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') { ?>
@@ -208,7 +225,7 @@ require_once './includes/db.php'; // Make sure DB connection is available
                                     }
 
                                 ?>
-                                    <tr>
+                                    <tr style="cursor:pointer;" onclick="window.location.href='attendance/index.php';">
                                         <td><?php echo $i++; ?></td>
                                         <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
                                         <td><?php echo $inTimeDisplay; ?></td>
@@ -244,7 +261,7 @@ SELECT
     u.name AS employee_name,
     u.date_of_joining,
 
-    -- Total leaves
+    -- Total leaves (all types, all statuses)
     (SELECT COUNT(*) FROM leaves WHERE employee_id = u.id) AS total_leaves,
 
     -- Current month leaves
@@ -262,36 +279,35 @@ SELECT
      WHERE employee_id = u.id 
        AND status = 'Pending') AS pending_leaves,
 
-    -- Months worked
-    TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()) AS months_worked,
+    -- Earned paid leaves: 1 per month worked, max 12/year
+    LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12) AS earned_paid_leaves,
 
-    -- Earned paid leaves (max 12 per year)
-    LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12 * TIMESTAMPDIFF(YEAR, u.date_of_joining, CURDATE())) AS earned_paid_leaves,
-
-    -- Used paid leaves
-    (SELECT COUNT(*) FROM leaves 
-     WHERE employee_id = u.id 
-       AND status = 'Paid') AS used_paid_leaves,
-
-    -- Remaining paid leaves
-    (LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12 * TIMESTAMPDIFF(YEAR, u.date_of_joining, CURDATE())))
-     -
-    (SELECT COUNT(*) FROM leaves 
-     WHERE employee_id = u.id 
-       AND status = 'Paid') AS remaining_paid_leaves,
-
-    -- On leave today?
-    EXISTS (
-        SELECT 1 FROM leaves 
+    -- Used paid leave days (sum of days)
+    IFNULL((
+        SELECT SUM(DATEDIFF(end_date, start_date) + 1)
+        FROM leaves 
         WHERE employee_id = u.id 
-          AND status = 'Approved' 
-          AND '$today' BETWEEN start_date AND end_date
-    ) AS on_leave_today
+          AND status = 'Approved'
+          AND leave_type = 'Paid'
+    ), 0) AS used_paid_leaves,
+
+    -- Remaining paid leave days
+    GREATEST(
+        LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12) -
+        IFNULL((
+            SELECT SUM(DATEDIFF(end_date, start_date) + 1)
+            FROM leaves 
+            WHERE employee_id = u.id 
+              AND status = 'Approved'
+              AND leave_type = 'Paid'
+        ), 0),
+    0) AS remaining_paid_leaves
 
 FROM users u
 WHERE u.role != 'admin'
 ORDER BY u.name ASC
 ";
+
 
         $result = mysqli_query($conn, $allEmployeesQuery);
         $employeeLeaves = [];
@@ -302,11 +318,10 @@ ORDER BY u.name ASC
         }
         ?>
 
-
         <div class="col-12 mt-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title mb-3"> Employees Leaves</h5>
+                    <h5 class="card-title mb-3">Employees Leaves</h5>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped" id="leaves-summary-table">
                             <thead>
@@ -317,30 +332,31 @@ ORDER BY u.name ASC
                                     <th>Current Month</th>
                                     <th>Last Month</th>
                                     <th>Pending</th>
-                                    <th>Paid Leaves</th>
-                                    
+                                    <th>Earned Paid</th>
+                                    <th>Joining Date</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($employeeLeaves as $index => $emp): ?>
-                                    <tr>
+                                    <tr style="cursor:pointer;" onclick="window.location.href='leaves/index.php';">
                                         <td><?= $index + 1 ?></td>
                                         <td><?= htmlspecialchars($emp['employee_name']) ?></td>
                                         <td><?= $emp['total_leaves'] ?></td>
                                         <td><?= $emp['current_month_leaves'] ?></td>
                                         <td><?= $emp['last_month_leaves'] ?></td>
                                         <td><?= $emp['pending_leaves'] ?></td>
-                                        <td><?= $emp['paid_leaves'] ?></td>
+                                        <td><?= $emp['earned_paid_leaves'] ?></td>
+                                        <td><?= date('Y-m-d', strtotime($emp['date_of_joining'])) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
-
                 </div>
             </div>
         </div>
     <?php } ?>
+
 
 
 
@@ -351,6 +367,16 @@ ORDER BY u.name ASC
 <script>
     $(document).ready(function() {
         $('#daily-attendance').DataTable({
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            lengthMenu: [10, 25, 50, 100],
+            autoWidth: false
+        });
+    });
+        $(document).ready(function() {
+        $('#leaves-summary-table').DataTable({
             paging: true,
             searching: true,
             ordering: true,
