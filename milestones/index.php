@@ -14,9 +14,17 @@
     <div class="card">
         <div class="card-body">
             <?php
-            $sql = "SELECT pm.*, p.name as project_name, p.hourly_rate 
+            $sql = "SELECT 
+            pm.*, 
+            p.name as project_name, 
+            p.hourly_rate, 
+            GROUP_CONCAT(u.name SEPARATOR ', ') AS assigned_employees
         FROM project_milestones pm
-        JOIN projects p ON pm.project_id = p.id";
+        JOIN projects p ON pm.project_id = p.id
+        LEFT JOIN employee_projects ep ON p.id = ep.project_id
+        LEFT JOIN users u ON ep.employee_id = u.id
+        GROUP BY pm.id";
+
             $query = mysqli_query($conn, $sql);
             $milestones = mysqli_fetch_all($query, MYSQLI_ASSOC);
 
@@ -28,6 +36,7 @@
                 <thead>
                     <th>#</th>
                     <th>Project Name</th>
+                    <th>Assigned Employees</th>
                     <th>Name</th>
                     <th>Due Date</th>
                     <th>Amount</th>
@@ -40,6 +49,7 @@
                         <tr>
                             <td><?php echo $key + 1; ?></td>
                             <td><?php echo $row['project_name']; ?></td>
+                            <td><?php echo $row['assigned_employees'] ?: 'N/A'; ?></td>
                             <td><?php echo $row['milestone_name']; ?></td>
                             <td><?php echo $row['due_date']; ?></td>
                             <td><?php echo $row['amount'] ? number_format($row['amount'], 2) : '-'; ?></td>

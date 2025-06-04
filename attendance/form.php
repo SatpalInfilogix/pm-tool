@@ -45,11 +45,12 @@ require_once '../includes/header.php';
 
 // Get user list based on role
 if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') {
-    $usersQuery = "SELECT id, name FROM users";
+    $usersQuery = "SELECT id, name FROM users WHERE role != 'admin'";
 } else {
     $userId = $userProfile['id'];
     $usersQuery = "SELECT id, name FROM users WHERE id = $userId";
 }
+
 
 $result = mysqli_query($conn, $usersQuery);
 $users = mysqli_fetch_all($result, MYSQLI_ASSOC);

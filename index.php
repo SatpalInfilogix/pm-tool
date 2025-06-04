@@ -101,6 +101,7 @@ require_once './includes/db.php'; // Make sure DB connection is available
         </div>
     </div>
 
+
     <!-- Milestone Alerts -->
     <?php
     $currentDate = date('Y-m-d');
@@ -119,11 +120,12 @@ require_once './includes/db.php'; // Make sure DB connection is available
 
     <?php foreach ($milestones as $row): ?>
         <?php
-        $status = $row['status'];
+        $status = $row['status'] ?? '';
+        $statusLabel = $status ? ucfirst(str_replace('_', ' ', $status)) : 'Absent';
         if ($status === 'not_started' || $status === 'completed') continue;
         $alertClass = ($status === 'in_progress') ? 'warning' : 'secondary';
         ?>
-        <h3>Due Milestones:</h3>
+        <h4><b>Due Milestones:</b></h4>
         <div class="alert alert-<?php echo $alertClass; ?> mb-3" role="alert">
             <?php echo htmlspecialchars($row['project_name']); ?>'s milestone
             <strong><?php echo htmlspecialchars($row['milestone_name']); ?></strong> is due on
@@ -132,95 +134,216 @@ require_once './includes/db.php'; // Make sure DB connection is available
     <?php endforeach; ?>
 
     <!-- Attendance Section -->
-    <?php
-    $attDate = date('Y-m-d');
-    $attQuery = "SELECT a.employee_id, u.name AS employee_name, a.status, a.in_time, a.out_time
-                 FROM attendance a
-                 JOIN users u ON a.employee_id = u.id
-                 WHERE a.date = '$attDate'
-                 ORDER BY u.name ASC";
-    $attResult = mysqli_query($conn, $attQuery);
-    ?>
+    <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') { ?>
 
-    <div class="col-12 mt-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Today's Attendance (<?php echo $attDate; ?>)</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="daily-attendance">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Employee Name</th>
-                                <th>In Time</th>
-                                <th>Out Time</th>
-                                <th>Status</th>
-                                <th>Total Hours</th> <!-- New header -->
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $i = 1;
-                            while ($row = mysqli_fetch_assoc($attResult)):
-                                $status = $row['status'];
-                                $statusLabel = ucfirst(str_replace('_', ' ', $status));
-                                $badgeClass = 'dark';
-                                $workedHours = '-';
-                                $inTimeDisplay = '-';
-                                $outTimeDisplay = '-';
+        <?php
+        $attDate = date('Y-m-d');
+        $attQuery = "SELECT a.employee_id, u.name AS employee_name, a.in_time, a.out_time
+     FROM attendance a
+     JOIN users u ON a.employee_id = u.id
+     WHERE a.date = '$attDate' AND u.role != 'admin'
+     ORDER BY u.name ASC";
 
-                                $inTime = strtotime($row['in_time']);
-                                $outTime = strtotime($row['out_time']);
-                                $isInTimeValid = $inTime !== false && $row['in_time'] !== null && $row['in_time'] !== '00:00:00';
-                                $isOutTimeValid = $outTime !== false && $row['out_time'] !== null && $row['out_time'] !== '00:00:00';
 
-                                if (!$isInTimeValid || !$isOutTimeValid) {
-                                    // No valid times – default to Absent
-                                    $statusLabel = "Absent";
-                                    $badgeClass = 'danger';
-                                } else {
-                                    $inTimeDisplay = date("h:i A", $inTime);
-                                    $outTimeDisplay = date("h:i A", $outTime);
-                                    $seconds = $outTime - $inTime;
-                                    $hours = floor($seconds / 3600);
-                                    $minutes = floor(($seconds % 3600) / 60);
-                                    $workedHours = "{$hours}h {$minutes}m";
-                                    // Override status based on hours
-                                    if ($hours >= 8) {
-                                        $statusLabel = "Present";
-                                        $badgeClass = 'success';
-                                    } elseif ($hours >= 3 && $hours < 6) {
-                                        $statusLabel = "Half Day";
-                                        $badgeClass = 'info';
-                                    } elseif ($hours >= 6 && $hours < 8) {
-                                        $statusLabel = "Short Leave";
-                                        $badgeClass = 'secondary';
-                                    } elseif ($hours < 3) {
+        $attResult = mysqli_query($conn, $attQuery);
+        ?>
+
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Today's Attendance (<?php echo $attDate; ?>)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="daily-attendance">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Employee Name</th>
+                                    <th>In Time</th>
+                                    <th>Out Time</th>
+                                    <th>Status</th>
+                                    <th>Total Hours</th> <!-- New header -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $i = 1;
+                                while ($row = mysqli_fetch_assoc($attResult)):
+                                    $status = $row['status'] ?? '';
+                                    $statusLabel = $status ? ucfirst(str_replace('_', ' ', $status)) : 'Absent';
+                                    $badgeClass = 'dark';
+                                    $workedHours = '-';
+                                    $inTimeDisplay = '-';
+                                    $outTimeDisplay = '-';
+
+                                    $inTime = !empty($row['in_time']) ? strtotime($row['in_time']) : false;
+                                    $outTime = !empty($row['out_time']) ? strtotime($row['out_time']) : false;
+                                    $isInTimeValid = $inTime !== false;
+                                    $isOutTimeValid = $outTime !== false;
+
+                                    if (!$isInTimeValid || !$isOutTimeValid) {
                                         $statusLabel = "Absent";
                                         $badgeClass = 'danger';
+                                    } else {
+                                        $inTimeDisplay = date("h:i A", $inTime);
+                                        $outTimeDisplay = date("h:i A", $outTime);
+                                        $seconds = $outTime - $inTime;
+                                        $hours = floor($seconds / 3600);
+                                        $minutes = floor(($seconds % 3600) / 60);
+                                        $workedHours = "{$hours}h {$minutes}m";
+
+                                        // Auto-assign status
+                                        if ($hours >= 8) {
+                                            $statusLabel = "Present";
+                                            $badgeClass = 'success';
+                                        } elseif ($hours >= 6) {
+                                            $statusLabel = "Short Leave";
+                                            $badgeClass = 'secondary';
+                                        } elseif ($hours >= 3) {
+                                            $statusLabel = "Half Day";
+                                            $badgeClass = 'info';
+                                        } else {
+                                            $statusLabel = "Absent";
+                                            $badgeClass = 'danger';
+                                        }
                                     }
-                                }
-                            ?>
+
+                                ?>
+                                    <tr>
+                                        <td><?php echo $i++; ?></td>
+                                        <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                                        <td><?php echo $inTimeDisplay; ?></td>
+                                        <td><?php echo $outTimeDisplay; ?></td>
+                                        <td>
+                                            <span class="badge bg-<?php echo $badgeClass; ?>">
+                                                <?php echo $statusLabel; ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo $workedHours; ?></td> <!-- New total hours column -->
+                                    </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php } ?>
+
+
+    <!-- Leaves data -->
+    <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') { ?>
+        <?php
+        $today = date('Y-m-d');
+        $currentMonth = date('Y-m');
+        $lastMonth = date('Y-m', strtotime('-1 month'));
+
+        $allEmployeesQuery = "
+SELECT 
+    u.id AS employee_id,
+    u.name AS employee_name,
+    u.date_of_joining,
+
+    -- Total leaves
+    (SELECT COUNT(*) FROM leaves WHERE employee_id = u.id) AS total_leaves,
+
+    -- Current month leaves
+    (SELECT COUNT(*) FROM leaves 
+     WHERE employee_id = u.id 
+       AND DATE_FORMAT(start_date, '%Y-%m') = '$currentMonth') AS current_month_leaves,
+
+    -- Last month leaves
+    (SELECT COUNT(*) FROM leaves 
+     WHERE employee_id = u.id 
+       AND DATE_FORMAT(start_date, '%Y-%m') = '$lastMonth') AS last_month_leaves,
+
+    -- Pending leaves
+    (SELECT COUNT(*) FROM leaves 
+     WHERE employee_id = u.id 
+       AND status = 'Pending') AS pending_leaves,
+
+    -- Months worked
+    TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()) AS months_worked,
+
+    -- Earned paid leaves (max 12 per year)
+    LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12 * TIMESTAMPDIFF(YEAR, u.date_of_joining, CURDATE())) AS earned_paid_leaves,
+
+    -- Used paid leaves
+    (SELECT COUNT(*) FROM leaves 
+     WHERE employee_id = u.id 
+       AND status = 'Paid') AS used_paid_leaves,
+
+    -- Remaining paid leaves
+    (LEAST(TIMESTAMPDIFF(MONTH, u.date_of_joining, CURDATE()), 12 * TIMESTAMPDIFF(YEAR, u.date_of_joining, CURDATE())))
+     -
+    (SELECT COUNT(*) FROM leaves 
+     WHERE employee_id = u.id 
+       AND status = 'Paid') AS remaining_paid_leaves,
+
+    -- On leave today?
+    EXISTS (
+        SELECT 1 FROM leaves 
+        WHERE employee_id = u.id 
+          AND status = 'Approved' 
+          AND '$today' BETWEEN start_date AND end_date
+    ) AS on_leave_today
+
+FROM users u
+WHERE u.role != 'admin'
+ORDER BY u.name ASC
+";
+
+        $result = mysqli_query($conn, $allEmployeesQuery);
+        $employeeLeaves = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $employeeLeaves[] = $row;
+            }
+        }
+        ?>
+
+
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"> Employees Leaves</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="leaves-summary-table">
+                            <thead>
                                 <tr>
-                                    <td><?php echo $i++; ?></td>
-                                    <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                    <td><?php echo $inTimeDisplay; ?></td>
-                                    <td><?php echo $outTimeDisplay; ?></td>
-                                    <td>
-                                        <span class="badge bg-<?php echo $badgeClass; ?>">
-                                            <?php echo $statusLabel; ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo $workedHours; ?></td> <!-- New total hours column -->
+                                    <th>#</th>
+                                    <th>Employee Name</th>
+                                    <th>Total Leaves</th>
+                                    <th>Current Month</th>
+                                    <th>Last Month</th>
+                                    <th>Pending</th>
+                                    <th>Paid Leaves</th>
+                                    
                                 </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($employeeLeaves as $index => $emp): ?>
+                                    <tr>
+                                        <td><?= $index + 1 ?></td>
+                                        <td><?= htmlspecialchars($emp['employee_name']) ?></td>
+                                        <td><?= $emp['total_leaves'] ?></td>
+                                        <td><?= $emp['current_month_leaves'] ?></td>
+                                        <td><?= $emp['last_month_leaves'] ?></td>
+                                        <td><?= $emp['pending_leaves'] ?></td>
+                                        <td><?= $emp['paid_leaves'] ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
 
                 </div>
             </div>
         </div>
-    </div>
+    <?php } ?>
+
+
+
 
 </div> <!-- end row -->
 

@@ -141,7 +141,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                     <select class="form-control" id="employeeFilter" name="employee">
                         <option value="">All</option>
                         <?php
-                        $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users ORDER BY name");
+                        $employeeQuery = mysqli_query($conn, "SELECT id, name FROM users WHERE role != 'admin' ORDER BY name");
                         while ($emp = mysqli_fetch_assoc($employeeQuery)) {
                             $selected = ($employeeFilter == $emp['id']) ? 'selected' : '';
                             echo '<option value="' . (int)$emp['id'] . '" ' . $selected . '>' . htmlspecialchars($emp['name']) . '</option>';
