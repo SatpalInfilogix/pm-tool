@@ -34,10 +34,10 @@ if (isset($_POST['edit_leave'])) {
     $isPaidLeave = strtolower($leave_type) === 'paid';
     $daysRequested = (strtotime($end_date) - strtotime($start_date)) / (60 * 60 * 24) + 1;
     if ($isNowApproved && !$wasApprovedBefore && $isPaidLeave) {
-    // Store how many days were approved for audit/debug
-    $logSql = "INSERT INTO leave_logs (employee_id, leave_id, days, action) VALUES ('$employee_id', '$id', '$daysRequested', 'approved')";
-    mysqli_query($conn, $logSql);
-}
+        // Store how many days were approved for audit/debug
+        $logSql = "INSERT INTO leave_logs (employee_id, leave_id, days, action) VALUES ('$employee_id', '$id', '$daysRequested', 'approved')";
+        mysqli_query($conn, $logSql);
+    }
     $reason = $_POST['reason'];
 
     // Update leave record
@@ -47,12 +47,20 @@ if (isset($_POST['edit_leave'])) {
     $result = mysqli_query($conn, $sql);
 
     // Notify user if status changed
-    if ($result && $status !== $oldStatus && in_array($status, ['approved', 'rejected'])) {
+    // Notify user if status changed
+    if ($result && $status !== $oldStatus && in_array(strtolower($status), ['approved', 'rejected'])) {
         $message = "Your leave request from $start_date to $end_date has been $status.";
-        $link = BASE_URL . "/leaves/view.php?id=$id"; // make sure this link is valid in your project
-        $notifSql = "INSERT INTO notifications (user_id, message, link) VALUES ('$employee_id', '$message', '$link')";
-        mysqli_query($conn, $notifSql);
+
+        // Optional: check if this link is accessible in your system
+        $link = BASE_URL . "/leaves/index.php"; // OR "/leaves/view.php?id=$id" if you have a view page
+
+        // Use prepared statements for security
+        $notifStmt = $conn->prepare("INSERT INTO notifications (user_id, message, link, created_at) VALUES (?, ?, ?, NOW())");
+        $notifStmt->bind_param("iss", $employee_id, $message, $link);
+        $notifStmt->execute();
+        $notifStmt->close();
     }
+
 
     header('Location: ' . BASE_URL . '/leaves/index.php');
     exit();

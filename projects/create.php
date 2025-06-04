@@ -50,16 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // Notification logic
                 $message = "You have been assigned to a new project: " . $name;
-                $link = BASE_URL . "/projects/view.php?id=" . $project_id;
+                $link = "/projects/view.php?id=" . $project_id;
 
-                $notif_sql = "INSERT INTO notifications (user_id, message, link) 
-                              VALUES ('$employee_id', '$message', '$link')";
+                $notif_sql = "INSERT INTO notifications (user_id, message, link) VALUES ('$employee_id', '$message', '$link')";
                 mysqli_query($conn, $notif_sql) or die("Notification insert failed: " . mysqli_error($conn));
             }
 
             // Handle file uploads
             if (!empty($_FILES['project_documents']['name'][0])) {
-                $targetDir = "uploads/projects/"; 
+                $targetDir = "uploads/projects/";
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
                 }
