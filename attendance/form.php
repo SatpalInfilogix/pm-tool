@@ -16,26 +16,50 @@ if (isset($_POST['submit_attendance'])) {
             $in_time_raw = trim($in_times[$index]);
             $out_time_raw = trim($out_times[$index]);
 
-            $in_time_24 = ($in_time_raw === '') ? '00:00:00' : date('H:i:s', strtotime($in_time_raw));
-            $out_time_24 = ($out_time_raw === '') ? '00:00:00' : date('H:i:s', strtotime($out_time_raw));
+            $in_time_24 = ($in_time_raw === '') ? null : date('H:i:s', strtotime($in_time_raw));
 
-            // Check duplicate
+            $out_time_24 = null;
+            if ($out_time_raw === '') {
+                // Check existing out_time if left empty
+                $checkQuery = "SELECT out_time FROM attendance WHERE employee_id = $employee_id AND date = '$date'";
+                $checkResult = mysqli_query($conn, $checkQuery);
+                if ($checkResult && mysqli_num_rows($checkResult) > 0) {
+                    $row = mysqli_fetch_assoc($checkResult);
+                    $out_time_24 = $row['out_time'];
+                } else {
+                    $out_time_24 = '00:00:00';
+                }
+            } else {
+                $out_time_24 = date('H:i:s', strtotime($out_time_raw));
+            }
+
+            // Check if record exists
             $checkQuery = "SELECT * FROM attendance WHERE employee_id = $employee_id AND date = '$date'";
             $checkResult = mysqli_query($conn, $checkQuery);
 
             if (mysqli_num_rows($checkResult) == 0) {
+                // Insert new
                 $insertQuery = "INSERT INTO attendance (employee_id, note, date, in_time, out_time)
                                 VALUES ($employee_id, '$note', '$date', '$in_time_24', '$out_time_24')";
                 mysqli_query($conn, $insertQuery);
             } else {
-                $updateQuery = "UPDATE attendance SET 
-                                note = '$note', 
-                                in_time = '$in_time_24',
-                                out_time = '$out_time_24'
+                // Update existing
+                $updateFields = "note = '$note'";
+
+                if ($in_time_raw !== '') {
+                    $updateFields .= ", in_time = '$in_time_24'";
+                }
+
+                if ($out_time_raw !== '') {
+                    $updateFields .= ", out_time = '$out_time_24'";
+                }
+
+                $updateQuery = "UPDATE attendance SET $updateFields
                                 WHERE employee_id = $employee_id AND date = '$date'";
                 mysqli_query($conn, $updateQuery);
             }
         }
+
         header("Location: index.php");
         exit();
     }
@@ -43,14 +67,12 @@ if (isset($_POST['submit_attendance'])) {
 
 require_once '../includes/header.php';
 
-// Get user list based on role
 if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') {
     $usersQuery = "SELECT id, name FROM users WHERE role != 'admin'";
 } else {
     $userId = $userProfile['id'];
     $usersQuery = "SELECT id, name FROM users WHERE id = $userId";
 }
-
 
 $result = mysqli_query($conn, $usersQuery);
 $users = mysqli_fetch_all($result, MYSQLI_ASSOC);
@@ -65,16 +87,12 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
 }
 ?>
 
-<!-- Your form HTML below this point -->
-
-
 <form method="post" id="attendance-form">
     <div class="col-md-2">
         <div class="mb-3">
             <label for="date">Date:</label>
             <input type="text" class="form-control" name="date" id="date" required
                 value="<?php echo htmlspecialchars($selectedDate); ?>" autocomplete="off">
-
         </div>
     </div>
 
@@ -88,7 +106,6 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
                             <th>Name</th>
                             <th>In Time</th>
                             <th>Out Time</th>
-                            <!-- <th>Status</th> -->
                             <th>Note</th>
                         </tr>
                     </thead>
@@ -97,9 +114,50 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
                             $empId = $user['id'];
                             $record = $attendanceRecords[$empId] ?? null;
 
-                            $in_time = $record ? date('h:i A', strtotime($record['in_time'])) : '';
-                            $out_time = $record ? date('h:i A', strtotime($record['out_time'])) : '';
+                            $in_time_raw = $record['in_time'] ?? '00:00:00';
+                            $out_time_raw = $record['out_time'] ?? '00:00:00';
+
+                            $in_time_display = ($in_time_raw && $in_time_raw !== '00:00:00') ? date('h:i A', strtotime($in_time_raw)) : '';
+                            $out_time_display = ($out_time_raw && $out_time_raw !== '00:00:00') ? date('h:i A', strtotime($out_time_raw)) : '';
                             $note = $record['note'] ?? '';
+
+                            // Calculate status and total hours
+                            $statusLabel = 'Absent';
+                            $badgeClass = 'danger';
+                            $workedHours = '-';
+
+                            $in_time = ($in_time_raw !== '00:00:00') ? strtotime($in_time_raw) : false;
+                            $out_time = ($out_time_raw !== '00:00:00') ? strtotime($out_time_raw) : false;
+
+                            if ($in_time && $out_time) {
+                                if ($out_time >= $in_time) {
+                                    $seconds = $out_time - $in_time;
+                                    $hours = floor($seconds / 3600);
+                                    $minutes = floor(($seconds % 3600) / 60);
+                                    $workedHours = "{$hours}h {$minutes}m";
+
+                                    if ($hours >= 8) {
+                                        $statusLabel = "Present";
+                                        $badgeClass = 'success';
+                                    } elseif ($hours >= 6) {
+                                        $statusLabel = "Short Leave";
+                                        $badgeClass = 'secondary';
+                                    } elseif ($hours >= 3) {
+                                        $statusLabel = "Half Day";
+                                        $badgeClass = 'info';
+                                    } else {
+                                        $statusLabel = "Absent";
+                                        $badgeClass = 'danger';
+                                    }
+                                } else {
+                                    $statusLabel = "Invalid Time";
+                                    $badgeClass = 'warning';
+                                    $workedHours = "-";
+                                }
+                            } elseif ($in_time && !$out_time) {
+                                $statusLabel = "In Progress";
+                                $badgeClass = "primary";
+                            }
                         ?>
                             <tr>
                                 <td><?php echo $key + 1; ?></td>
@@ -107,31 +165,32 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
                                     <?php echo htmlspecialchars($user['name']); ?>
                                     <input type="hidden" name="employee_id[]" value="<?php echo $empId; ?>">
                                 </td>
-                                <td><input type="text" class="form-control timepicker" name="in_time[]" placeholder="HH:MM AM/PM" value="<?php echo htmlspecialchars($in_time); ?>"></td>
-                                <td><input type="text" class="form-control timepicker" name="out_time[]" placeholder="HH:MM AM/PM" value="<?php echo htmlspecialchars($out_time); ?>"></td>
+                                <td><input type="text" class="form-control timepicker" name="in_time[]" placeholder="HH:MM AM/PM" value="<?php echo htmlspecialchars($in_time_display); ?>"></td>
+                                <td><input type="text" class="form-control timepicker" name="out_time[]" placeholder="HH:MM AM/PM" value="<?php echo htmlspecialchars($out_time_display); ?>"></td>
                                 <td><input type="text" class="form-control" name="note[]" placeholder="Optional note" value="<?php echo htmlspecialchars($note); ?>"></td>
                             </tr>
                         <?php endforeach; ?>
-
                     </tbody>
+
                 </table>
                 <button type="submit" class="btn btn-primary" name="submit_attendance">Save</button>
             </div>
         </div>
     </div>
 </form>
+
+<!-- Flatpickr Assets -->
 <link rel="stylesheet" href="https://unpkg.com/flatpickr/dist/flatpickr.min.css" />
 <script src="https://unpkg.com/flatpickr"></script>
 
+<!-- jQuery validation and flatpickr logic -->
 <script>
     $(document).ready(function() {
-        // Flatpickr for date input with onChange
         flatpickr("#date", {
             dateFormat: "Y-m-d",
             maxDate: "today",
             disable: [
                 function(date) {
-                    // Disable weekends (Sunday = 0, Saturday = 6)
                     return date.getDay() === 0 || date.getDay() === 6;
                 }
             ],
@@ -139,20 +198,18 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
                 if (dateStr) {
                     const url = new URL(window.location.href);
                     url.searchParams.set('date', dateStr);
-                    window.location.href = url.toString(); // reload page with new date param
+                    window.location.href = url.toString();
                 }
             }
         });
 
-        // Flatpickr for time input only (12-hour format with AM/PM)
         flatpickr(".timepicker", {
             enableTime: true,
             noCalendar: true,
-            dateFormat: "h:i K", // 12-hour format
+            dateFormat: "h:i K",
             time_24hr: false,
         });
 
-        // Your jQuery validation stays as is
         $('#attendance-form').validate({
             rules: {
                 'date': "required",

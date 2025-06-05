@@ -156,11 +156,10 @@ require_once './includes/db.php'; // Make sure DB connection is available
         <?php
         $attDate = date('Y-m-d');
         $attQuery = "SELECT a.employee_id, u.name AS employee_name, a.in_time, a.out_time
-     FROM attendance a
-     JOIN users u ON a.employee_id = u.id
-     WHERE a.date = '$attDate' AND u.role != 'admin'
-     ORDER BY u.name ASC";
-
+ FROM attendance a
+ JOIN users u ON a.employee_id = u.id
+ WHERE a.date = '$attDate' AND u.role != 'admin'
+ ORDER BY u.name ASC";
 
         $attResult = mysqli_query($conn, $attQuery);
         ?>
@@ -178,74 +177,76 @@ require_once './includes/db.php'; // Make sure DB connection is available
                                     <th>In Time</th>
                                     <th>Out Time</th>
                                     <th>Status</th>
-                                    <th>Total Hours</th> <!-- New header -->
+                                    <th>Total Hours</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
                                 $i = 1;
                                 while ($row = mysqli_fetch_assoc($attResult)):
-                                    $status = $row['status'] ?? '';
-                                    $statusLabel = $status ? ucfirst(str_replace('_', ' ', $status)) : 'Absent';
-                                    $badgeClass = 'dark';
+                                    $statusLabel = 'Absent';
+                                    $badgeClass = 'danger';
                                     $workedHours = '-';
-                                    $inTimeDisplay = '-';
-                                    $outTimeDisplay = '-';
 
-                                    $inTime = !empty($row['in_time']) ? strtotime($row['in_time']) : false;
-                                    $outTime = !empty($row['out_time']) ? strtotime($row['out_time']) : false;
-                                    $isInTimeValid = $inTime !== false;
-                                    $isOutTimeValid = $outTime !== false;
+                                    // Handle empty/zero times properly
+                                    $inTimeRaw = $row['in_time'];
+                                    $outTimeRaw = $row['out_time'];
 
-                                    if (!$isInTimeValid || !$isOutTimeValid) {
-                                        $statusLabel = "Absent";
-                                        $badgeClass = 'danger';
-                                    } else {
-                                        $inTimeDisplay = date("h:i A", $inTime);
-                                        $outTimeDisplay = date("h:i A", $outTime);
-                                        $seconds = $outTime - $inTime;
-                                        $hours = floor($seconds / 3600);
-                                        $minutes = floor(($seconds % 3600) / 60);
-                                        $workedHours = "{$hours}h {$minutes}m";
+                                    $inTime = ($inTimeRaw && $inTimeRaw !== '00:00:00') ? strtotime($inTimeRaw) : false;
+                                    $outTime = ($outTimeRaw && $outTimeRaw !== '00:00:00') ? strtotime($outTimeRaw) : false;
 
-                                        // Auto-assign status
-                                        if ($hours >= 8) {
-                                            $statusLabel = "Present";
-                                            $badgeClass = 'success';
-                                        } elseif ($hours >= 6) {
-                                            $statusLabel = "Short Leave";
-                                            $badgeClass = 'secondary';
-                                        } elseif ($hours >= 3) {
-                                            $statusLabel = "Half Day";
-                                            $badgeClass = 'info';
+                                    $inTimeDisplay = $inTime ? date("h:i A", $inTime) : '-';
+                                    $outTimeDisplay = $outTime ? date("h:i A", $outTime) : '-';
+
+                                    $hours = 0; // always initialize
+                                    if ($inTime && $outTime) {
+                                        if ($outTime >= $inTime) {
+                                            $seconds = $outTime - $inTime;
+                                            $hours = floor($seconds / 3600);
+                                            $minutes = floor(($seconds % 3600) / 60);
+                                            $workedHours = "{$hours}h {$minutes}m";
+
+                                            // Auto-assign status
+                                            if ($hours >= 8) {
+                                                $statusLabel = "Present";
+                                                $badgeClass = 'success';
+                                            } elseif ($hours >= 6) {
+                                                $statusLabel = "Short Leave";
+                                                $badgeClass = 'secondary';
+                                            } elseif ($hours >= 3) {
+                                                $statusLabel = "Half Day";
+                                                $badgeClass = 'info';
+                                            } else {
+                                                $statusLabel = "Absent";
+                                                $badgeClass = 'danger';
+                                            }
                                         } else {
-                                            $statusLabel = "Absent";
-                                            $badgeClass = 'danger';
+                                            $statusLabel = "Invalid Time";
+                                            $badgeClass = 'warning';
+                                            $workedHours = "-";
                                         }
+                                    } elseif ($inTime && !$outTime) {
+                                        $statusLabel = "In Progress";
+                                        $badgeClass = "primary";
                                     }
-
                                 ?>
                                     <tr style="cursor:pointer;" onclick="window.location.href='attendance/index.php';">
                                         <td><?php echo $i++; ?></td>
                                         <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
                                         <td><?php echo $inTimeDisplay; ?></td>
                                         <td><?php echo $outTimeDisplay; ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $badgeClass; ?>">
-                                                <?php echo $statusLabel; ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo $workedHours; ?></td> <!-- New total hours column -->
+                                        <td><span class="badge bg-<?php echo $badgeClass; ?>"><?php echo $statusLabel; ?></span></td>
+                                        <td><?php echo $workedHours; ?></td>
                                     </tr>
                                 <?php endwhile; ?>
                             </tbody>
                         </table>
-
                     </div>
                 </div>
             </div>
         </div>
     <?php } ?>
+
 
 
     <!-- Leaves data -->
@@ -375,7 +376,7 @@ ORDER BY u.name ASC
             autoWidth: false
         });
     });
-        $(document).ready(function() {
+    $(document).ready(function() {
         $('#leaves-summary-table').DataTable({
             paging: true,
             searching: true,

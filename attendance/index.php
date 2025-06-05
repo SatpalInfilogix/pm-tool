@@ -22,13 +22,12 @@ if ($userRole === 'admin' || $userRole === 'hr') {
         $filters[] = "u.id = $employeeId";
     }
 } else {
-    // Remove a.status here because it doesn't exist in DB
+    // Normal users see only their own attendance
     $query = "SELECT a.id, a.date, u.name AS employee_name, a.note, a.in_time, a.out_time, u.id AS employee_id
               FROM attendance a
               JOIN users u ON a.employee_id = u.id
               WHERE u.id = $userId";
 }
-
 
 if (!empty($dateRange) && strpos($dateRange, ' to ') !== false) {
     [$startDate, $endDate] = explode(' to ', $dateRange);
@@ -49,23 +48,36 @@ $query .= " ORDER BY a.date DESC, u.name ASC";
 
 $result = mysqli_query($conn, $query);
 
-// Prepare an array to store rows after filtering by derived status
 $filteredRows = [];
 
 while ($row = mysqli_fetch_assoc($result)) {
-    $inTime = strtotime($row['in_time']);
-    $outTime = strtotime($row['out_time']);
-    $isInTimeValid = $inTime !== false && $row['in_time'] !== null && $row['in_time'] !== '00:00:00';
-    $isOutTimeValid = $outTime !== false && $row['out_time'] !== null && $row['out_time'] !== '00:00:00';
+    $inTimeDisplay = ($row['in_time'] === null || trim($row['in_time']) === '') ? '-' : date('h:i A', strtotime($row['in_time']));
+    $outTimeDisplay = ($row['out_time'] === null || trim($row['out_time']) === '') ? '-' : date('h:i A', strtotime($row['out_time']));
 
-    // Default derived status and badge class
+    $isInTimeValid = ($row['in_time'] !== null && trim($row['in_time']) !== '');
+    $isOutTimeValid = ($row['out_time'] !== null && trim($row['out_time']) !== '');
+
+    $inTime = $isInTimeValid ? strtotime($row['in_time']) : null;
+    $outTime = $isOutTimeValid ? strtotime($row['out_time']) : null;
+
+    // Avoid displaying 12:00 AM/PM for zero timestamps
+    if ($isInTimeValid && $inTime > 0) {
+        $inTimeDisplay = date("h:i A", $inTime);
+    } else {
+        $inTimeDisplay = '-';
+    }
+
+    if ($isOutTimeValid && $outTime > 0) {
+        $outTimeDisplay = date("h:i A", $outTime);
+    } else {
+        $outTimeDisplay = '-';
+    }
+
     $derivedStatus = "Absent";
     $badgeClass = "danger";
     $workedHours = '-';
-    $inTimeDisplay = '-';
-    $outTimeDisplay = '-';
 
-    if ($isInTimeValid && $isOutTimeValid) {
+    if ($isInTimeValid && $isOutTimeValid && $inTime > 0 && $outTime > 0) {
         $seconds = $outTime - $inTime;
         if ($seconds > 0) {
             $hours = floor($seconds / 3600);
@@ -85,16 +97,12 @@ while ($row = mysqli_fetch_assoc($result)) {
                 $derivedStatus = "Absent";
                 $badgeClass = "danger";
             }
-
-            $inTimeDisplay = date("h:i A", $inTime);
-            $outTimeDisplay = date("h:i A", $outTime);
         }
     }
 
-    // Normalize derived status for filtering
+    // Normalize status for filtering
     $normalizedDerivedStatus = strtolower(str_replace(' ', '_', $derivedStatus));
 
-    // Apply status filter if provided
     if (empty($statusFilter) || $normalizedDerivedStatus === $statusFilter) {
         $row['derived_status'] = $derivedStatus;
         $row['badge_class'] = $badgeClass;
@@ -106,13 +114,6 @@ while ($row = mysqli_fetch_assoc($result)) {
     }
 }
 ?>
-
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>Attendance Records</title>
-</head>
 
 <body>
     <div class="container-fluid ">
@@ -202,9 +203,11 @@ while ($row = mysqli_fetch_assoc($result)) {
                                 <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
                                 <td><?php echo $row['in_time_display']; ?></td>
                                 <td><?php echo $row['out_time_display']; ?></td>
-                                <td><span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>">
+                                <td>
+                                    <span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>" title="<?php echo htmlspecialchars($row['worked_hours']); ?>">
                                         <?php echo htmlspecialchars($row['derived_status']); ?>
-                                    </span></td>
+                                    </span>
+                                </td>
                                 <td><?php echo htmlspecialchars($row['worked_hours']); ?></td>
                                 <td><?php echo htmlspecialchars($row['note']); ?></td>
                             </tr>
