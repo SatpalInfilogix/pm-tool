@@ -32,23 +32,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $items = $_POST['items'] ?? [];
 
     foreach ($items as $item) {
+        $task_title = $conn->real_escape_string($item['title']);
+        $hours = floatval($item['hours']);
+        $rate = floatval($item['rate']);
+
         if (!empty($item['id'])) {
+            // Update existing task
             $itemId = intval($item['id']);
-            $task_title = $conn->real_escape_string($item['title']);
-            $hours = floatval($item['hours']);
-            $rate = floatval($item['rate']);
-
             $sql = "UPDATE invoice_items 
-                    SET task_title = '$task_title', 
-                        hours = $hours, 
-                        rate = $rate
-                    WHERE id = $itemId";
-
+                SET task_title = '$task_title', 
+                    hours = $hours, 
+                    rate = $rate 
+                WHERE id = $itemId";
+            mysqli_query($conn, $sql);
+        } else {
+            // Insert new task
+            $invoiceId = intval($_GET['id']);
+            $sql = "INSERT INTO invoice_items (invoice_id, task_title, hours, rate) 
+                VALUES ($invoiceId, '$task_title', $hours, $rate)";
             mysqli_query($conn, $sql);
         }
     }
 
-   
+
+
     header('Location: ' . BASE_URL . '/invoices/index.php?updated=1');
     exit();
 }

@@ -45,14 +45,18 @@ if (isset($_POST['submit_attendance'])) {
             } else {
                 // Update existing
                 $updateFields = "note = '$note'";
-
-                if ($in_time_raw !== '') {
+                if ($in_time_raw === '') {
+                    $updateFields .= ", in_time = NULL";
+                } else {
                     $updateFields .= ", in_time = '$in_time_24'";
                 }
 
-                if ($out_time_raw !== '') {
+                if ($out_time_raw === '') {
+                    $updateFields .= ", out_time = NULL";
+                } else {
                     $updateFields .= ", out_time = '$out_time_24'";
                 }
+
 
                 $updateQuery = "UPDATE attendance SET $updateFields
                                 WHERE employee_id = $employee_id AND date = '$date'";
@@ -88,6 +92,9 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
 ?>
 
 <form method="post" id="attendance-form">
+    <div class="page-title-box pb-4 d-sm-flex align-items-center justify-content-between">
+        <h4>Add Attendance</h4>
+    </div>
     <div class="col-md-2">
         <div class="mb-3">
             <label for="date">Date:</label>

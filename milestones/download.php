@@ -41,7 +41,11 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $desc = preg_replace('/[\x{00A0}\s]+$/u', '', $desc); // removes NBSP and spaces at end
 
         // Step 3: Encode again to HTML-safe for PDF
-        $description_html = nl2br(htmlspecialchars($desc, ENT_QUOTES, 'UTF-8'));
+        // Convert HTML entities to plain text (strip tags), preserve line breaks
+        $plain_text = strip_tags(html_entity_decode($milestone['description'], ENT_QUOTES, 'UTF-8'));
+        $plain_text = trim($plain_text);
+        $description_html = '<div style="white-space: pre-wrap; direction: ltr; text-align: left;">' . htmlspecialchars($plain_text, ENT_QUOTES, 'UTF-8') . '</div>';
+
 
         $html = '<meta charset="UTF-8">
 
@@ -145,7 +149,4 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 } else {
     echo "Invalid request.";
     exit();
-    
 }
-
-?>

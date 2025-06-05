@@ -102,13 +102,19 @@ require_once './includes/db.php'; // Make sure DB connection is available
     </div>
 
 
+
+
     <!-- Milestone Alerts -->
     <?php
+    $userProfile = userProfile();
+    $userId = $userProfile['id'];
+    $userRole = $userProfile['role'];
+
     $currentDate = date('Y-m-d');
     $sql = "SELECT pm.id, pm.milestone_name, pm.due_date, pm.status, p.name AS project_name
-        FROM project_milestones pm
-        JOIN projects p ON pm.project_id = p.id
-        WHERE pm.due_date <= '$currentDate'";
+    FROM project_milestones pm
+    JOIN projects p ON pm.project_id = p.id
+    WHERE pm.due_date <= '$currentDate'";
     $query = mysqli_query($conn, $sql);
     $milestones = [];
     if ($query) {
@@ -116,16 +122,16 @@ require_once './includes/db.php'; // Make sure DB connection is available
             $milestones[] = $row;
         }
     }
-    ?>
 
-    <?php
     $hasDueMilestone = false;
     foreach ($milestones as $row) {
         $status = $row['status'] ?? '';
         if ($status === 'not_started' || $status === 'completed') continue;
         $hasDueMilestone = true;
-        break; // We only need to know that at least one exists
+        break;
     }
+
+   
     ?>
 
     <?php if ($hasDueMilestone): ?>
@@ -136,17 +142,25 @@ require_once './includes/db.php'; // Make sure DB connection is available
         <?php
         $status = $row['status'] ?? '';
         if ($status === 'not_started' || $status === 'completed') continue;
+
         $alertClass = ($status === 'in_progress') ? 'warning' : 'secondary';
+
+        // Role-based redirect
+        $redirectUrl = 'milestones/index.php'; // default for employee
+        if ($userRole === 'admin' || $userRole === 'hr') {
+            $redirectUrl = 'milestones/edit.php?id=' . $row['id'];
+        }
         ?>
         <div class="alert alert-<?php echo $alertClass; ?> mb-3"
             role="alert"
             style="cursor: pointer;"
-            onclick="window.location.href='milestones/edit.php?id=<?= $row['id'] ?>'">
+            onclick="window.location.href='<?php echo $redirectUrl; ?>'">
             <?php echo htmlspecialchars($row['project_name']); ?>'s milestone
             <strong><?php echo htmlspecialchars($row['milestone_name']); ?></strong> is due on
             <strong><?php echo htmlspecialchars($row['due_date']); ?></strong>.
         </div>
     <?php endforeach; ?>
+
 
 
 
