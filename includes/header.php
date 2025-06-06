@@ -11,12 +11,16 @@ $user_id = $_SESSION['user_id'] ?? null;
 $userProfile = userProfile();
 $userId = $userProfile['id'];
 
+
+$sql = "SELECT * FROM notifications";
+if ($userProfile['role'] == 'admin' || $userProfile['role'] == 'hr') {
+    $sql .= ' ORDER BY created_at DESC';
+} else {
+    $sql .= ' WHERE user_id="' . $userProfile['id'] . '" ORDER BY created_at DESC';
+}
+
+$result = $conn->query($sql);
 // Get user notifications
-$sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$result = $stmt->get_result();
 $notifications = [];
 while ($row = $result->fetch_assoc()) {
     $notifications[] = $row;
@@ -99,7 +103,7 @@ $cacheBuster = '?v=' . time();
                             <div class="p-3">
                                 <div class="row align-items-center">
                                     <div class="col">
-                                        <h6 class="m-0" key="t-notifications"> Notifications </h6>
+                                        <h6 class="m-0" key="t-notifications">Notification</h6>
                                     </div>
                                     <div class="col-auto">
                                         <a href="<?php echo BASE_URL; ?>/notifications.php" class="btn btn-sm btn-link font-size-14 text-center">view more</a>
@@ -109,7 +113,19 @@ $cacheBuster = '?v=' . time();
                             </div>
 
                             <?php foreach (array_slice($notifications, 0, 5) as $noti): ?>
-                                <a href="<?php echo BASE_URL; ?>/leaves/index.php" class="text-reset notification-item">
+                                <?php
+                                // Default link
+                                $link = BASE_URL . '/leaves/index.php';
+
+                                // If the notification message contains 'assigned to a new project', override the link
+                                if (strpos($noti['message'], 'assigned to a new project') !== false) {
+                                    $link = BASE_URL . '/projects/index.php';
+                                } elseif (strpos($noti['message'], 'leave request') !== false) {
+                                    // leave request messages stay linked to leaves page or you can customize per leave ID if stored
+                                    $link = BASE_URL . '/leaves/index.php';
+                                }
+                                ?>
+                                <a href="<?php echo htmlspecialchars($link); ?>" class="text-reset notification-item">
                                     <div class="d-flex">
                                         <div class="avatar-xs me-3">
                                             <span class="avatar-title bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 32px;">
@@ -128,6 +144,7 @@ $cacheBuster = '?v=' . time();
                                     </div>
                                 </a>
                             <?php endforeach; ?>
+
 
 
                             <?php if (count($notifications) > 5): ?>
@@ -224,9 +241,9 @@ $cacheBuster = '?v=' . time();
                                 <span>Holidays</span>
                             </a>
                         </li>
-                        <li >
+                        <li>
                             <a href="<?php echo BASE_URL; ?>/attendance/index.php" class="waves-effect">
-                              <i class="bx bx-calendar-check"></i>
+                                <i class="bx bx-calendar-check"></i>
                                 <span>Attendance</span>
                             </a>
                         </li>

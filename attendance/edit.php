@@ -1,50 +1,65 @@
-<?php
-require_once '../includes/db.php';
-$user_values = userProfile();
+<!-- <?php
+// require_once '../includes/header.php';
+// require_once '../includes/functions.php';
+// require_once '../includes/db.php';
+// $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
-    $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
-    $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
-    exit();
-}
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = intval($_POST['id']);
-    $status = $_POST['status'];
-    $note = $_POST['note'];
-    $date = $_POST['date'];
+// if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
+//     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
+//     $_SESSION['toast'] = "Access denied. Employees only.";
+//     header("Location: " . $redirectUrl);
+//     exit();
+// }
 
-    $query = "UPDATE attendance SET status = $status, note =  $note, date =  $date WHERE id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("sssi", $status, $note, $date, $id);
+// if (isset($_POST['submit_attendance'])) {
+//     $id = intval($_POST['id']);
+//     $employee_id = intval($_POST['employee_id']);
+//     $date = $_POST['date'];
+//     $note = $_POST['note'];
+//     $in_time_raw = trim($_POST['in_time']);
+//     $out_time_raw = trim($_POST['out_time']);
 
-    if ($stmt->execute()) {
-        header("Location: index.php?message=updated");
-    } else {
-        echo "Failed to update.";
-    }
-}
-if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-    $sqlquery = "SELECT * FROM attendance  WHERE id = '$id'";
-    $result = mysqli_query($conn, $sqlquery);
-    if (mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
+//     $in_time = ($in_time_raw === '') ? '00:00:00' : date('H:i:s', strtotime($in_time_raw));
+//     $out_time = ($out_time_raw === '') ? '00:00:00' : date('H:i:s', strtotime($out_time_raw));
+
+//     $updateQuery = "UPDATE attendance SET 
+//                     note = ?, in_time = ?, out_time = ?, date = ? 
+//                     WHERE id = ? AND employee_id = ?";
+//     $stmt = $conn->prepare($updateQuery);
+//     $stmt->bind_param("ssssii", $note, $in_time, $out_time, $date, $id, $employee_id);
+//     if ($stmt->execute()) {
+//         header("Location: index.php?message=updated");
+//         exit();
+//     } else {
+//         echo "Failed to update attendance: " . $stmt->error;
+//     }
+// }
+
+// if (isset($_GET['id'])) {
+//     $id = intval($_GET['id']);
+//     $sqlquery = "SELECT a.*, u.name AS employee_name FROM attendance a JOIN users u ON a.employee_id = u.id WHERE a.id = ?";
+//     $stmt = $conn->prepare($sqlquery);
+//     $stmt->bind_param("i", $id);
+//     $stmt->execute();
+//     $result = $stmt->get_result();
+
+//         $row = $result->fetch_assoc();
 ?>
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0 font-size-18">Edit Attendance </h4>
-            <a href="./index.php" class="btn btn-primary d-flex"><i class="bx bx-left-arrow-alt me-1 fs-4"></i>Go Back</a>
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0 font-size-18">Edit Attendance</h4>
+                    <a href="./index.php" class="btn btn-primary d-flex">
+                        <i class="bx bx-left-arrow-alt me-1 fs-4"></i>Go Back
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+
+        <!-- <?php include './form.php'; ?> -->
+
 <?php
-    } else {
-        echo "Attendance  not found.";
-    }
-}
-?> 
-<?php include './form.php' ?>
-<?php require_once '../includes/footer.php';?>
+    // } 
+
+// require_once '../includes/footer.php';
+// ?> -->

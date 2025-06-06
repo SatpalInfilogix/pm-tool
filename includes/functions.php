@@ -33,3 +33,28 @@ function getSetting($key)
         return null; // or a default value like ''
     }
 }
+function calculateDynamicStatus($inTime, $outTime)
+{
+    $inTime = strtotime($inTime);
+    $outTime = strtotime($outTime);
+
+    $isInTimeValid = $inTime !== false && $inTime !== 0;
+    $isOutTimeValid = $outTime !== false && $outTime !== 0;
+
+    if ($isInTimeValid && $isOutTimeValid && $outTime > $inTime) {
+        $workedSeconds = $outTime - $inTime;
+        $workedHours = $workedSeconds / 3600;
+
+        if ($workedHours >= 8) {
+            return 'present';
+        } elseif ($workedHours >= 6) {
+            return 'short_leave';
+        } elseif ($workedHours >= 3) {
+            return 'half_day';
+        } else {
+            return 'absent';
+        }
+    }
+
+    return 'absent';
+}

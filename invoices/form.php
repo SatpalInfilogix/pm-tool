@@ -73,7 +73,7 @@
 </form>
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
 
         $("#invoiceDate").datepicker({
             format: 'yyyy-mm-dd',
@@ -180,7 +180,7 @@
                     min: "Rate must be greater than or equal to 0"
                 }
             },
-            submitHandler: function (form) {
+            submitHandler: function(form) {
                 form.submit();
             }
         });
@@ -204,16 +204,16 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Hours</label>
-                <input type="number" step="0.1" class="form-control" name="items[${count}][hours]" value="${hours}" required>
+                <input type="number" step="any" class="form-control" name="items[${count}][hours]" value="${hours}" required>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Rate</label>
-                <input type="number" step="0.01" class="form-control" name="items[${count}][rate]" value="${rate}" required>
+                <input type="number" step="any" class="form-control" name="items[${count}][rate]" value="${rate}" required>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 ${isSingle
                     ? '<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>'
-                    : '<button type="button" class="btn btn-danger   remove-item">Remove</button>'}
+                    : '<button type="button" class="btn btn-danger w-100  remove-item">Remove</button>'}
             </div>
         </div>
     `;
@@ -224,39 +224,55 @@
             $('#invoiceItemsContainer').empty();
             existingTasks.forEach((task, index) => {
                 itemCount = index + 1;
-                const isSingle = existingTasks.length === 1;
-                $('#invoiceItemsContainer').append(renderTask(itemCount, task, isSingle));
+                const isLast = (index === existingTasks.length - 1); // last task only
+                $('#invoiceItemsContainer').append(renderTask(itemCount, task, isLast));
             });
+
         } else {
             itemCount = 1;
             $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
         }
 
 
-        $('#invoiceItemsContainer').on('click', '.add-task', function () {
-
+        $('#invoiceItemsContainer').on('click', '.add-task', function() {
             $(this)
                 .removeClass('btn-primary add-task')
                 .addClass('btn-danger remove-item')
                 .text('Remove');
-
 
             itemCount++;
             $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
         });
 
 
-        $('#invoiceItemsContainer').on('click', '.remove-item', function () {
+
+        $('#invoiceItemsContainer').on('click', '.remove-item', function() {
             $(this).closest('.invoice-item').remove();
 
-
+            // After removal, update buttons
             const items = $('#invoiceItemsContainer .invoice-item');
-            if (items.length === 1) {
-                const btnContainer = items.eq(0).find('.col-md-1');
-                btnContainer.html('<button type="button" class="btn btn-primary w-100 add-task">Add Task</button>');
+
+            items.each(function(index) {
+                const btnContainer = $(this).find('.btn-container');
+                btnContainer.empty();
+
+                if (index === items.length - 1) {
+                    // last item gets Add Task
+                    btnContainer.append('<button type="button" class="btn btn-primary w-60 add-task">Add Task</button>');
+                } else {
+                    // others get Remove
+                    btnContainer.append('<button type="button" class="btn btn-danger remove-item">Remove</button>');
+                }
+            });
+
+            // If no items remain, add a blank item with Add Task button
+            if (items.length === 0) {
+                itemCount++;
+                $('#invoiceItemsContainer').append(renderTask(itemCount, {}, true));
             }
         });
 
-    });
 
+
+    });
 </script>

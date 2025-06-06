@@ -3,11 +3,10 @@ ob_start();
 require_once '../includes/header.php';
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 
@@ -21,23 +20,25 @@ if (isset($_POST['edit-policies'])) {
         $id = $_POST['id'];
         $name = $_POST['name'];
         $description = $_POST['description'];
-    
+
         $uploadedFiles = [];
-    
+
         if (!empty($_FILES['file']['name'][0])) {
             foreach ($_FILES['file']['name'] as $key => $filename) {
                 $tmpName = $_FILES['file']['tmp_name'][$key];
-                $uploadDir = '../uploads/';
-                $filePath = $uploadDir . basename($filename);
-                if (move_uploaded_file($tmpName, $filePath)) {
-                    $uploadedFiles[] = $filePath;
+                $relativePath = 'uploads/' . basename($filename);
+                $absolutePath = '../' . $relativePath;
+
+                if (move_uploaded_file($tmpName, $absolutePath)) {
+                    $fullUrl = BASE_URL . '/' . $relativePath;
+                    $uploadedFiles[] = $fullUrl;
                 }
             }
         }
-    
+
         // If files were uploaded, prepare the file string
         $fileString = !empty($uploadedFiles) ? implode(',', $uploadedFiles) : null;
-    
+
         // Use conditional SQL depending on file update
         if ($fileString) {
             $sql = "UPDATE policies SET name = ?, description = ?, file = ? WHERE id = ?";
@@ -58,7 +59,7 @@ if (isset($_POST['edit-policies'])) {
                 die("Prepare failed: " . $conn->error);
             }
         }
-    
+
         header('Location: ' . BASE_URL . '/policy/index.php');
         exit();
     }

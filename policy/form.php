@@ -29,16 +29,23 @@
                             $file = trim($file);
                             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                         ?>
-                            <li style="margin-bottom: 10px;">
-                                <?php if (in_array($ext, $image_extensions)): ?>
-                                    <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
-                                        <img src="<?php echo htmlspecialchars($file); ?>" alt="Uploaded Image" style="max-width: 100%; height: auto; max-height: 100px; border-radius: 5px;" />
-                                    </a>
-                                <?php else: ?>
-                                    <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
-                                        <?php echo htmlspecialchars(basename($file)); ?>
-                                    </a>
-                                <?php endif; ?>
+                            <li style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="flex-grow: 1;">
+                                    <?php if (in_array($ext, $image_extensions)): ?>
+                                        <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
+                                            <img src="<?php echo htmlspecialchars($file); ?>" alt="Uploaded Image" style="max-width: 100%; height: auto; max-height: 100px; border-radius: 5px;" />
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
+                                            <?php echo htmlspecialchars(basename($file)); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-file-btn m-2" data-file="<?php echo htmlspecialchars($file); ?>" title="Remove file">
+                                        <i class="fa fa-trash"></i> 
+                                    </button>
+                                </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -128,6 +135,27 @@
                 $(this).val(0);
             }
 
+        });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('policies-form');
+
+        document.querySelectorAll('.remove-file-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const file = this.getAttribute('data-file');
+
+                // Remove the file's <li> element from the UI
+                this.closest('li').remove();
+
+                // Add a hidden input to the form to submit removed files
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'remove_files[]';
+                input.value = file;
+                form.appendChild(input);
+            });
         });
     });
 </script>

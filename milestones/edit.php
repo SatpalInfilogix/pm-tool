@@ -1,13 +1,33 @@
 <?php
 ob_start();
 require_once '../includes/header.php';
+
+// Fetch milestone request (latest only)
+$milestoneRequest = null;
+$milestoneId = $_GET['id'] ?? 0;
+
+$reqSql = "SELECT mr.*, u.name AS employee_name 
+           FROM milestone_requests mr
+           JOIN users u ON mr.employee_id = u.id
+           WHERE mr.milestone_id = ?
+           ORDER BY mr.created_at DESC
+           LIMIT 1";
+
+$reqStmt = $conn->prepare($reqSql);
+$reqStmt->bind_param("i", $milestoneId);
+$reqStmt->execute();
+$reqResult = $reqStmt->get_result();
+
+if ($reqResult && $reqResult->num_rows > 0) {
+    $milestoneRequest = $reqResult->fetch_assoc();
+}
+
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 $plugins = ['datepicker', 'select2'];
@@ -96,15 +116,29 @@ if (isset($_POST['edit-milestone'])) {
 
 <div class="row">
     <div class="col-12">
-        
+
         <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">Edit Milestone</h4>
             <a href="./index.php" class="btn btn-primary d-flex"><i class="bx bx-left-arrow-alt me-1 fs-4"></i>Go Back</a>
         </div>
     </div>
 </div>
+<?php if (!empty($milestoneRequest)) { ?>
+    <div class="alert alert-info mt-3" role="alert">
+        <h5 class="alert-heading"><i class="bx bx-time"></i> Milestone Change Request</h5>
+        <hr>
+        <div class="space pt-0 mt-0">
+        <p><strong>Requested By:</strong> <?php echo htmlspecialchars($milestoneRequest['employee_name']); ?></p>
+        <p><strong>New Due Date:</strong> <?php echo htmlspecialchars($milestoneRequest['requested_due_date']); ?></p>
+        <p><strong>Reason:</strong><br><?php echo nl2br(htmlspecialchars($milestoneRequest['reason'])); ?></p>
+        <p class="mb-0 text-muted"><small>Submitted on: <?php echo date('d M Y, h:i A', strtotime($milestoneRequest['created_at'])); ?></small></p>
+    </div>
+    </div>
+<?php } ?>
+
+
 
 <div class="card">
-<?php include './form.php'; ?>
+    <?php include './form.php'; ?>
 </div>
 <?php require_once '../includes/footer.php'; ?>

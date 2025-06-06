@@ -1,27 +1,40 @@
 <?php require_once './includes/header.php'; ?>
 <?php
 require_once './includes/db.php';
-
-function getNotifications()
+$userProfile = userProfile();
+function getNotifications($userProfile)
 {
     global $conn;
-    $sql = "SELECT * FROM notifications ORDER BY created_at DESC";
-    $result = $conn->query($sql);
     $notifications = [];
-    if ($result && $result->num_rows > 0) {
+
+    // Only show own notifications for employees
+    if ($userProfile['role'] === 'employee') {
+        $sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $userProfile['id']);
+    } else {
+        // Admins and HR see all notifications
+        $sql = "SELECT * FROM notifications ORDER BY created_at DESC";
+        $stmt = $conn->prepare($sql);
+    }
+
+    if ($stmt && $stmt->execute()) {
+        $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
             $notifications[] = $row;
         }
     }
+
     return $notifications;
 }
-$notifications = getNotifications();
-$extraNotifications = array_slice($notifications, 5);
+
+$notifications = getNotifications($userProfile);
 ?>
 <div class="row">
     <div class="col-12">
         <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">Notifications </h4>
+            <span class="badge bg-info fs-6"><?php echo count($notifications); ?> New</span>
         </div>
     </div>
 </div>
@@ -38,28 +51,34 @@ $extraNotifications = array_slice($notifications, 5);
                 </thead>
 
                 <tbody>
-                    <?php foreach ($extraNotifications as $noti): ?>
+                    <?php foreach ($notifications as $noti): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($noti['message']); ?></td>
-                            <td><?php echo htmlspecialchars($noti['created_at']); ?> </td>
+                            <td><?php echo htmlspecialchars($noti['created_at']); ?></td>
                             <td>
                                 <?php
-                                $notificationLink = htmlspecialchars($noti['link']);
-                                // Debugging: Check the actual link generated
-                                if (strpos($notificationLink, 'http') !== 0) {
-                                    $notificationLink = BASE_URL . $notificationLink;
+                                $link = $noti['link'];
+                                if ($userProfile['role'] === 'employee') {
+                                    if (strpos($noti['message'], 'assigned to a new project') !== false) {
+                                        $link = BASE_URL . '/projects/index.php';
+                                    }
                                 }
-                                ?>
-                                <a href="<?php echo BASE_URL; ?>/projects/index.php" class="btn btn-sm btn-primary">View</a>
+
+                                if (!empty($noti['link'])): ?>
+                                    <a href="<?php echo  ltrim($noti['link'], '/'); ?>" class="btn btn-sm btn-primary">View</a>
+                                <?php else: ?>
+                                    <span class="text-muted">No link</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
 
+                </tbody>
             </table>
         </div>
     </div>
 </div>
+
 <script>
     $(document).ready(function() {
         $('#notificationTable').DataTable({
@@ -67,8 +86,12 @@ $extraNotifications = array_slice($notifications, 5);
             "ordering": true,
             "info": true,
             "lengthMenu": [10, 25, 50, 100],
-            "autoWidth": false
+            "autoWidth": false,
+            "order": [
+                [1, "desc"]
+            ] // Sort by Date And Time desc by default
         });
     });
 </script>
+
 <?php require_once './includes/footer.php'; ?>

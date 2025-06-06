@@ -17,14 +17,20 @@
           <div class="card-body">
               <?php
                 if ($userRole == 'employee') {
-                    $sql = "SELECT p.*, e.name AS employee_name FROM projects p 
-                    LEFT JOIN employee_projects ep ON p.id = ep.project_id 
-                    LEFT JOIN users e ON ep.employee_id = e.id 
-                    WHERE ep.employee_id = '$userId' AND e.role = 'employee'";
-
+                    $sql = "SELECT p.*, GROUP_CONCAT(e.name SEPARATOR ', ') AS assigned_employees
+            FROM projects p 
+            LEFT JOIN employee_projects ep ON p.id = ep.project_id 
+            LEFT JOIN users e ON ep.employee_id = e.id 
+            WHERE ep.employee_id = '$userId' AND e.role = 'employee'
+            GROUP BY p.id";
                 } else {
-                    $sql = "SELECT * FROM projects";
+                    $sql = "SELECT p.*, GROUP_CONCAT(u.name SEPARATOR ', ') AS assigned_employees
+            FROM projects p 
+            LEFT JOIN employee_projects ep ON p.id = ep.project_id 
+            LEFT JOIN users u ON ep.employee_id = u.id 
+            GROUP BY p.id";
                 }
+
                 $query = mysqli_query($conn, $sql);
                 $projects = mysqli_fetch_all($query, MYSQLI_ASSOC);
                 ?>
@@ -32,6 +38,7 @@
                   <thead>
                       <th>#</th>
                       <th>Project Name</th>
+                      <th>Assigned Employees</th>
                       <th>Start Date</th>
                       <th>Due Date</th>
                       <th>Type</th>
@@ -45,6 +52,7 @@
                           <tr>
                               <td><?php echo  $key + 1 ?></td>
                               <td><?php echo $row['name'] ?></td>
+                              <td><?php echo $row['assigned_employees'] ?: 'N/A'; ?></td>
                               <td><?php echo $row['start_date'] ?></td>
                               <td><?php echo $row['due_date'] ?></td>
                               <td>
@@ -61,9 +69,9 @@
                                       <button class="btn btn-danger delete-btn btn-sm" data-table-name="projects" data-id="<?php echo $row['id'] ?>"><i class="bx bx-trash fs-5"></i></button>
                               </td>
                           <?php } else { ?>
-                            <?php  } ?>
-                            <?php } ?>
-                        </tbody>
+                          <?php  } ?>
+                      <?php } ?>
+                  </tbody>
 
           </div>
       </div>
