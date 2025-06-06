@@ -131,7 +131,7 @@ require_once './includes/db.php'; // Make sure DB connection is available
         break;
     }
 
-   
+
     ?>
 
     <?php if ($hasDueMilestone): ?>
@@ -240,16 +240,24 @@ require_once './includes/db.php'; // Make sure DB connection is available
                                             $workedHours = "-";
                                         }
                                     } elseif ($inTime && !$outTime) {
-                                        $statusLabel = "In Progress";
-                                        $badgeClass = "primary";
+                                        $statusLabel = "-";
+                                        $badgeClass = "secondary";
+                                        $workedHours = "-";
                                     }
+
                                 ?>
                                     <tr style="cursor:pointer;" onclick="window.location.href='attendance/index.php';">
                                         <td><?php echo $i++; ?></td>
                                         <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
                                         <td><?php echo $inTimeDisplay; ?></td>
                                         <td><?php echo $outTimeDisplay; ?></td>
-                                        <td><span class="badge bg-<?php echo $badgeClass; ?>"><?php echo $statusLabel; ?></span></td>
+                                        <td>
+                                            <?php if ($statusLabel !== "-"): ?>
+                                                <span class="badge bg-<?php echo $badgeClass; ?>"><?php echo $statusLabel; ?></span>
+                                            <?php else: ?>
+                                                <span>-</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo $workedHours; ?></td>
                                     </tr>
                                 <?php endwhile; ?>
@@ -346,7 +354,7 @@ ORDER BY u.name ASC
                                     <th>Total Leaves</th>
                                     <th>Current Month</th>
                                     <th>Last Month</th>
-                                    <th>Pending</th>
+                                    <th>Pending Requests</th>
                                     <th>Earned Paid</th>
                                     <th>Joining Date</th>
                                 </tr>

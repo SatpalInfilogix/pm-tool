@@ -64,12 +64,11 @@ $notifications = getNotifications($userProfile);
                                     }
                                 }
 
-                                if (!empty($link)) {
-                                    echo '<a href="' . htmlspecialchars($link) . '" class="btn btn-sm btn-primary" target="_blank">View</a>';
-                                } else {
-                                    echo '<span class="text-muted">No link</span>';
-                                }
-                                ?>
+                                if (!empty($noti['link'])): ?>
+                                    <a href="<?php echo  ltrim($noti['link'], '/'); ?>" class="btn btn-sm btn-primary">View</a>
+                                <?php else: ?>
+                                    <span class="text-muted">No link</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -87,7 +86,10 @@ $notifications = getNotifications($userProfile);
             "ordering": true,
             "info": true,
             "lengthMenu": [10, 25, 50, 100],
-            "autoWidth": false
+            "autoWidth": false,
+            "order": [
+                [1, "desc"]
+            ] // Sort by Date And Time desc by default
         });
     });
 </script>

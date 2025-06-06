@@ -204,10 +204,15 @@ while ($row = mysqli_fetch_assoc($result)) {
                                 <td><?php echo $row['in_time_display']; ?></td>
                                 <td><?php echo $row['out_time_display']; ?></td>
                                 <td>
-                                    <span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>" title="<?php echo htmlspecialchars($row['worked_hours']); ?>">
-                                        <?php echo htmlspecialchars($row['derived_status']); ?>
-                                    </span>
+                                    <?php if (!empty($row['out_time_display']) && $row['out_time_display'] !== '-'): ?>
+                                        <span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>" title="<?php echo htmlspecialchars($row['worked_hours']); ?>">
+                                            <?php echo htmlspecialchars($row['derived_status']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                    <?php endif; ?>
                                 </td>
+
                                 <td><?php echo htmlspecialchars($row['worked_hours']); ?></td>
                                 <td><?php echo htmlspecialchars($row['note']); ?></td>
                             </tr>
