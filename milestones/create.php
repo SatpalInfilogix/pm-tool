@@ -4,70 +4,84 @@ require_once '../includes/header.php';
 $plugins = ['datepicker', 'select2'];
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
+
 if (isset($_POST['add_milestone'])) {
     $project_id = $_POST['project_id'];
     $milestone_name = $_POST['milestone_name'];
     $description = isset($_POST['description']) ? strip_tags($_POST['description']) : '';
-    $due_date = date('Y-m-d', strtotime($_POST['due_date']));
+    $due_date_raw = $_POST['due_date'];
+    $completed_date_raw = $_POST['completed_date'] ?? null;
+    $completed_date = !empty($completed_date_raw) ? date('Y-m-d', strtotime($completed_date_raw)) : null;
     $amount = $_POST['amount'] ? $_POST['amount'] : NULL;
     $currency_code = $_POST['currency_code'];
     $status = $_POST['status'];
 
-    $projectCheckQuery = "SELECT id FROM projects ";
-    $result = mysqli_query($conn, $projectCheckQuery);
+    $errorMessage = '';
+    $due_date = !empty($due_date_raw) ? date('Y-m-d', strtotime($due_date_raw)) : null;
+
+    if (empty($project_id) || empty($milestone_name) || !$due_date || empty($currency_code) || empty($status)) {
+        $errorMessage = "Please fill all required fields including due date.";
+    }
 
     if (empty($amount)) {
         $errorMessage = "Amount is required.";
     }
-    if (mysqli_num_rows($result) > 0) {
-        $insertQuery = "INSERT INTO project_milestones (project_id, milestone_name, due_date, amount, currency_code, description, status) 
-                        VALUES ('$project_id', '$milestone_name', '$due_date', '$amount', '$currency_code', '$description', '$status')";
 
+    if (empty($errorMessage)) {
+        $insertQuery = "INSERT INTO project_milestones 
+(project_id, milestone_name, due_date, completed_date, amount, currency_code, description, status) 
+VALUES ('$project_id', '$milestone_name', '$due_date', '$completed_date', '$amount', '$currency_code', '$description', '$status')";
+
+
+
+        // Insert milestone
         if (mysqli_query($conn, $insertQuery)) {
             $milestone_id = mysqli_insert_id($conn);
 
-            if (!empty($_FILES['milestone_documents']['name'][0])) {
-                $uploadDir = "../uploads/milestones/";
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-
-                foreach ($_FILES['milestone_documents']['name'] as $key => $filename) {
-                    $tmpName = $_FILES['milestone_documents']['tmp_name'][$key];
-                    $fileType = $_FILES['milestone_documents']['type'][$key];
-                    $fileSize = $_FILES['milestone_documents']['size'][$key];
-
-                    $allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf', 'text/plain', 'video/mp4', 'video/avi', 'video/mov'];
-                    if (!in_array($fileType, $allowedTypes)) {
-                        $errorMessage = "Invalid file type: $filename";
-                        continue;
+            if ($milestone_id > 0) {
+                // Insert files if any
+                if (!empty($_FILES['milestone_documents']['name'][0])) {
+                    $uploadDir = "../uploads/milestones/";
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
                     }
 
-                    $newFileName = time() . "-" . basename($filename);
-                    $filePath = $uploadDir . $newFileName;
+                    foreach ($_FILES['milestone_documents']['name'] as $key => $filename) {
+                        $tmpName = $_FILES['milestone_documents']['tmp_name'][$key];
+                        $fileType = $_FILES['milestone_documents']['type'][$key];
+                        $allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf', 'text/plain', 'video/mp4', 'video/avi', 'video/mov'];
 
-                    if (move_uploaded_file($tmpName, $filePath)) {
-                        $fileInsertQuery = "INSERT INTO milestone_documents (milestone_id, file_path, file_name) 
-                                            VALUES ('$milestone_id', '$filePath', '$newFileName')";
-                        mysqli_query($conn, $fileInsertQuery);
+                        if (!in_array($fileType, $allowedTypes)) {
+                            continue;
+                        }
+
+                        $newFileName = time() . "-" . basename($filename);
+                        $filePath = $uploadDir . $newFileName;
+
+                        if (move_uploaded_file($tmpName, $filePath)) {
+                            $fileInsertQuery = "INSERT INTO milestone_documents (milestone_id, file_path, file_name) 
+                                        VALUES ('$milestone_id', '$filePath', '$newFileName')";
+                            mysqli_query($conn, $fileInsertQuery);
+                        }
                     }
                 }
+
+                // ✅ Redirect to index page with toast
+                $_SESSION['toast'] = "Milestone created successfully!";
+                header("Location: index.php");
+                exit();
+            } else {
+                $errorMessage = "Failed to insert milestone, invalid milestone ID.";
             }
-
-            header('Location: ' . BASE_URL . '/milestones/index.php');
-            exit();
         } else {
             $errorMessage = "Database Error: " . mysqli_error($conn);
         }
-    } else {
-        $errorMessage = "Invalid project selection. Please select a valid fixed project.";
     }
 }
 ?>
@@ -80,8 +94,13 @@ if (isset($_POST['add_milestone'])) {
         </div>
     </div>
 </div>
+
+<?php if (!empty($errorMessage)) : ?>
+    <div class="alert alert-danger mx-3"><?= htmlspecialchars($errorMessage) ?></div>
+<?php endif; ?>
+
 <div class="card">
-    <?php include './form.php' ?>
+    <?php include './form.php'; ?>
 </div>
 
 <?php require_once '../includes/footer.php'; ?>

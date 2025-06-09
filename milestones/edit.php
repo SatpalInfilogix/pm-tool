@@ -41,7 +41,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     if ($result && mysqli_num_rows($result) > 0) {
         $row = mysqli_fetch_assoc($result);
 
-        $docQuery = "SELECT * FROM milestone_documents WHERE id = '$id'";
+        $docQuery = "SELECT * FROM milestone_documents WHERE milestone_id = '$id'";
         $docResult = mysqli_query($conn, $docQuery);
         $documents = mysqli_fetch_all($docResult, MYSQLI_ASSOC);
     } else {
@@ -75,6 +75,18 @@ if (isset($_POST['edit-milestone'])) {
                         WHERE id='$id'";
 
         if (mysqli_query($conn, $updateQuery)) {
+            // Delete existing milestone documents before inserting new ones
+            // Delete old files physically
+            $oldFilesResult = mysqli_query($conn, "SELECT file_path FROM milestone_documents WHERE milestone_id = '$id'");
+            while ($rowFile = mysqli_fetch_assoc($oldFilesResult)) {
+                if (file_exists($rowFile['file_path'])) {
+                    unlink($rowFile['file_path']);
+                }
+            }
+
+            // Now delete the DB rows
+            mysqli_query($conn, "DELETE FROM milestone_documents WHERE milestone_id = '$id'");
+
             if (!empty($_FILES['milestone_documents']['name'][0])) {
                 $uploadDir = "../uploads/milestones/";
                 if (!is_dir($uploadDir)) {
@@ -96,8 +108,9 @@ if (isset($_POST['edit-milestone'])) {
                     $filePath = $uploadDir . $newFileName;
 
                     if (move_uploaded_file($tmpName, $filePath)) {
-                        $fileInsertQuery = "INSERT INTO milestone_documents (id, file_path, file_name) 
-                                            VALUES ('$id', '$filePath', '$newFileName')";
+                        $fileInsertQuery = "INSERT INTO milestone_documents (milestone_id, file_path, file_name) 
+                                    VALUES ('$id', '$filePath', '$newFileName')";
+
                         mysqli_query($conn, $fileInsertQuery);
                     }
                 }
@@ -128,11 +141,11 @@ if (isset($_POST['edit-milestone'])) {
         <h5 class="alert-heading"><i class="bx bx-time"></i> Milestone Change Request</h5>
         <hr>
         <div class="space pt-0 mt-0">
-        <p><strong>Requested By:</strong> <?php echo htmlspecialchars($milestoneRequest['employee_name']); ?></p>
-        <p><strong>New Due Date:</strong> <?php echo htmlspecialchars($milestoneRequest['requested_due_date']); ?></p>
-        <p><strong>Reason:</strong><br><?php echo nl2br(htmlspecialchars($milestoneRequest['reason'])); ?></p>
-        <p class="mb-0 text-muted"><small>Submitted on: <?php echo date('d M Y, h:i A', strtotime($milestoneRequest['created_at'])); ?></small></p>
-    </div>
+            <p><strong>Requested By:</strong> <?php echo htmlspecialchars($milestoneRequest['employee_name']); ?></p>
+            <p><strong>New Due Date:</strong> <?php echo htmlspecialchars($milestoneRequest['requested_due_date']); ?></p>
+            <p><strong>Reason:</strong><br><?php echo nl2br(htmlspecialchars($milestoneRequest['reason'])); ?></p>
+            <p class="mb-0 text-muted"><small>Submitted on: <?php echo date('d M Y, h:i A', strtotime($milestoneRequest['created_at'])); ?></small></p>
+        </div>
     </div>
 <?php } ?>
 
