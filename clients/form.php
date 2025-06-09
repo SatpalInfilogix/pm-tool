@@ -1,94 +1,101 @@
-<div class="card">
-<form method="POST" name="client-form" id="client-form" class="p-3" enctype="multipart/form-data">
-        <div class="row">
+<div class="card shadow-sm">
+    <form method="POST" name="client-form" id="client-form" class="p-4" enctype="multipart/form-data" novalidate>
+        <div class="row g-3">
             <div class="col-md-6">
-                <div class="mb-3">
-                <label for="name"> Name<span style="color: red;">*</span></label>
-                <input type="text" class="form-control" name="name" id="name" required minlength="2"
-                value="<?php echo isset($row['name']) ? $row['name'] : ''; ?>">  
-                </div>
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="name"
+                    id="name"
+                    required
+                    minlength="2"
+                    value="<?php echo isset($row['name']) ? htmlspecialchars($row['name']) : ''; ?>"
+                    placeholder="Enter client name" />
             </div>
+
             <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="email">Email</label>
-                    <input type="email" class="form-control" name="email" required value="<?php echo isset($row['email']) ? $row['email'] : ''; ?>">
-                </div>
+                <label for="email" class="form-label">Email</label>
+                <input
+                    type="email"
+                    class="form-control"
+                    name="email"
+                    id="email"
+                    value="<?php echo isset($row['email']) ? htmlspecialchars($row['email']) : ''; ?>"
+                    placeholder="Enter email address" />
             </div>
-          
+
+            <div class="col-md-6">
+                <label for="phone" class="form-label">Phone Number</label>
+                <input
+                    type="tel"
+                    class="form-control"
+                    name="phone"
+                    id="phone"
+                    pattern="\d{10}"
+                    maxlength="10"
+                    value="<?php echo isset($row['phone']) ? htmlspecialchars($row['phone']) : ''; ?>"
+                    placeholder="10-digit phone number" />
+            </div>
+
+            <div class="col-md-6">
+                <label for="cname" class="form-label">Company Name</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="cname"
+                    id="cname"
+                    value="<?php echo isset($row['cname']) ? htmlspecialchars($row['cname']) : ''; ?>"
+                    placeholder="Enter company name" />
+            </div>
+
+            <!-- Address moved to the end with full width -->
+            <div class="col-12">
+                <label for="address" class="form-label">Address</label>
+                <textarea
+                    class="form-control"
+                    name="address"
+                    id="address"
+                    rows="3"
+                    placeholder="Enter address"><?php echo isset($row['address']) ? htmlspecialchars($row['address']) : ''; ?></textarea>
+            </div>
         </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="phoneno">Phone Number</label>
-                    <input type="number" class="form-control" name="phone" required pattern="\d{10}" value="<?php echo isset($row['phone']) ? $row['phone'] : ''; ?>">
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="address">Address</label>
-                    <textarea class="form-control" name="address" id="address" required><?php echo isset($row['address']) ? $row['address'] : ''; ?></textarea>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="cname">Company Name</label>
-                    <input type="cname" class="form-control" name="cname" required value="<?php echo isset($row['cname']) ? $row['cname'] : ''; ?>">
-                </div>
-            </div>
+
+        <input type="hidden" name="client_id" value="<?php echo isset($row['id']) ? $row['id'] : ''; ?>" />
+
+        <div class="mt-4">
+            <button
+                type="submit"
+                class="btn btn-primary"
+                name="<?php echo isset($row['id']) ? 'edit_client' : 'add_client'; ?>">
+                <?php echo isset($row['id']) ? 'Update' : 'Submit'; ?>
+            </button>
         </div>
-        <input type="hidden" name="client_id" value="<?php echo isset($row['id']) ? $row['id'] : ''; ?>">
-        <button type="submit" class="btn btn-primary" name=<?php echo isset($row['id']) ? 'edit_client' : 'add_client'; ?>>
-            <?php echo isset($row['id']) ? 'Update' : 'Submit'; ?>
-        </button>
     </form>
 </div>
+
 <script>
-     $(document).ready(function() {
+    $(document).ready(function() {
         $('#client-form').validate({
             rules: {
-                name: "required",
-                email: {
-                    required: true,
-                    email: true
-                },
-                phoneno: {
-                    required: true,
-                    minlength: 10,
-                    maxlength: 10,
-                    digits: true
-                },
-                address: "required"
+                name: "required"
             },
             messages: {
-                name: "Please enter client name",
-                email: "Please enter a valid email address",
-                phoneno: {
-                    required: "Please enter a 10-digit phone number",
-                    minlength: "Phone number must be 10 digits",
-                    maxlength: "Phone number cannot be more than 10 digits"
-                },
-                address: "Please enter address."
+                name: "Please enter client name"
+            },
+            errorElement: 'div',
+            errorClass: 'invalid-feedback',
+            highlight: function(element) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function(element) {
+                $(element).removeClass('is-invalid');
             },
             errorPlacement: function(error, element) {
                 if (element.hasClass('select2-hidden-accessible')) {
                     error.insertAfter(element.next('.select2'));
                 } else {
                     error.insertAfter(element);
-                }
-            },
-            highlight: function(element) {
-                if ($(element).hasClass('select2-hidden-accessible')) {
-                    $(element).removeClass('is-invalid');
-                    $(element).next('.select2').find('.select2-selection').addClass('is-invalid');
-                } else {
-                    $(element).addClass('is-invalid');
-                }
-            },
-            unhighlight: function(element) {
-                if ($(element).hasClass('select2-hidden-accessible')) {
-                    $(element).next('.select2').find('.select2-selection').removeClass('is-invalid');
-                } else {
-                    $(element).removeClass('is-invalid');
                 }
             }
         });

@@ -44,17 +44,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $project_id = mysqli_insert_id($conn);
 
             foreach ($employees as $employee_id) {
+                // Assign employee to project
                 $assignEmployee = "INSERT INTO employee_projects (employee_id, project_id, assigned_date) 
-                                   VALUES ('$employee_id', '$project_id', NOW())";
+                       VALUES ('$employee_id', '$project_id', NOW())";
                 mysqli_query($conn, $assignEmployee);
 
-                // Notification logic
-                $message = "You have been assigned to a new project: " . $name;
-                $link = "/projects/view.php?id=" . $project_id;
+                // Defensive: Fetch user role
+                // Defensive: Fetch user role
+                $role_sql = "SELECT role FROM users WHERE id = '$employee_id' LIMIT 1";
+                $role_result = mysqli_query($conn, $role_sql);
+                $role_row = mysqli_fetch_assoc($role_result);
+                $user_role = $role_row['role'] ?? '';
 
-                $notif_sql = "INSERT INTO notifications (user_id, message, link) VALUES ('$employee_id', '$message', '$link')";
-                mysqli_query($conn, $notif_sql) or die("Notification insert failed: " . mysqli_error($conn));
+                // Only insert notification for employees (not admin/hr/etc.)
+                if (strtolower($user_role) === 'employee') {
+                    $message = "You have been assigned to a new project: " . $name;
+                    $link = "/projects/index.php";
+
+                    $notif_sql = "INSERT INTO notifications (user_id, message, link) VALUES ('$employee_id', '$message', '$link')";
+                    mysqli_query($conn, $notif_sql) or die("Notification insert failed: " . mysqli_error($conn));
+                }
             }
+
+
 
             // Handle file uploads
             if (!empty($_FILES['project_documents']['name'][0])) {

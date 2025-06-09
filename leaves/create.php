@@ -1,31 +1,35 @@
 <?php
 ob_start();
 require_once '../includes/header.php';
+
 $userProfile = userProfile();
 $userId = $userProfile['id'];
 $userRole = $userProfile['role'];
-$userId = $_SESSION['userId'];
+$userId = $_SESSION['userId'];  // It's better to get from session directly
+
 if (isset($_POST['add_leave'])) {
     $employee_id = $userId;
     $leave_type = $_POST['leave_type'];
     $start_date = $_POST['start_date'];
     $end_date = $_POST['end_date'];
-    $status = $_POST['status'];
+    $status = 'pending';  // Always pending on creation
     $reason =  $_POST['reason'];
-    $status = 'pending';
-    $query = "INSERT INTO leaves (employee_id, leave_type, start_date, end_date,status,reason) 
-              VALUES ('$employee_id', '$leave_type', '$start_date', '$end_date', '$status','$reason')";
+
+    $query = "INSERT INTO leaves (employee_id, leave_type, start_date, end_date, status, reason) 
+              VALUES ('$employee_id', '$leave_type', '$start_date', '$end_date', '$status', '$reason')";
 
     if (mysqli_query($conn, $query)) {
-
         $leaveMessage = "New leave request submitted by " . $userProfile['name'];
         $leaveLink = BASE_URL . "/leaves/index.php";
         $rolesToNotify = ['admin', 'hr'];
-        $rolesPlaceholder = implode("','", array_map(function ($role) use ($conn) {
-            return mysqli_real_escape_string($conn, $role);
-        }, $rolesToNotify));
 
-        $roleQuery = "SELECT id FROM users WHERE role IN ('$rolesPlaceholder')";
+        // Escape and quote roles properly for SQL IN clause
+        $escapedRoles = array_map(function ($role) use ($conn) {
+            return "'" . mysqli_real_escape_string($conn, $role) . "'";
+        }, $rolesToNotify);
+        $rolesPlaceholder = implode(",", $escapedRoles);
+
+        $roleQuery = "SELECT id FROM users WHERE role IN ($rolesPlaceholder)";
         $roleResult = mysqli_query($conn, $roleQuery);
 
         while ($row = mysqli_fetch_assoc($roleResult)) {
@@ -33,16 +37,17 @@ if (isset($_POST['add_leave'])) {
             $stmt = $conn->prepare("INSERT INTO notifications (user_id, message, link, created_at) VALUES (?, ?, ?, NOW())");
             $stmt->bind_param("iss", $recipientId, $leaveMessage, $leaveLink);
             $stmt->execute();
+            $stmt->close();
         }
 
         header('Location: ' . BASE_URL . '/leaves/index.php');
         exit();
+    } else {
+        $errorMessage = mysqli_error($conn);
     }
-} else {
-    $errorMessage = mysqli_error($conn);
-};
-
+}
 ?>
+
 <div class="row">
     <div class="col-12">
         <div class="page-title-box pb-3 d-sm-flex align-items-center justify-content-between">

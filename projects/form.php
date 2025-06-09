@@ -182,17 +182,14 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
         }
 
         toggleHourlyRate();
-
-        $('#type').change(function() {
-            toggleHourlyRate();
-        });
+        $('#type').change(toggleHourlyRate);
 
         $("#start_date, #due_date").datepicker({
             format: 'yyyy-mm-dd',
             autoclose: true
         });
 
-        $('#due_date').on('change', function() {
+        $('#due_date').change(function() {
             var startDate = new Date($('#start_date').val());
             var dueDate = new Date($(this).val());
 
@@ -202,7 +199,16 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
             }
         });
 
-        $('#team_leader, #client, #project-status, #type, #currency-code').select2();
+        $('#team_leader, #client, #project-status, #type, #currency-code, #employees').select2({
+            placeholder: function() {
+                return $(this).attr('id') === 'employees' ? "Select Employees" : "Select an option";
+            }
+        });
+
+        jQuery.validator.addMethod("greaterThanOrEqual", function(value, element, param) {
+            var startDate = $(param).val();
+            return !startDate || !value || new Date(value) >= new Date(startDate);
+        }, "Due Date must be greater than or equal to Start Date.");
 
         $('#project-form').validate({
             ignore: [],
@@ -235,9 +241,14 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
                     required: true
                 },
                 description: {
-                    required: true,
+                    required: true
                 },
-
+                hourly_rate: {
+                    required: function() {
+                        return $('#type').val() === 'hourly';
+                    },
+                    number: true
+                }
             },
             messages: {
                 due_date: {
@@ -247,9 +258,7 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
                     required: "Please provide a description."
                 }
             },
-
             errorPlacement: function(error, element) {
-                console.log('error', error);
                 if (element.attr("name") === "description") {
                     error.insertAfter($("#description").next('.note-editor'));
                 } else if (element.hasClass('select2-hidden-accessible')) {
@@ -258,10 +267,8 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
                     error.insertAfter(element);
                 }
             },
-
             highlight: function(element) {
                 if ($(element).hasClass('select2-hidden-accessible')) {
-                    $(element).removeClass('is-invalid');
                     $(element).next('.select2').find('.select2-selection').addClass('is-invalid');
                 } else {
                     $(element).addClass('is-invalid');
@@ -276,19 +283,7 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
             }
         });
 
-        $('#employees').select2({
-            placeholder: "Select Employees",
-            allowClear: true
-        });
-
-
-        jQuery.validator.addMethod("greaterThanOrEqual", function(value, element, param) {
-            var startDate = $(param).val();
-            return !startDate || !value || new Date(value) >= new Date(startDate);
-        }, "Due Date must be greater than or equal to Start Date.");
-
-
-        $(".delete-file").click(function(e) {
+        $('.delete-file').click(function(e) {
             e.preventDefault();
             let fileId = $(this).data("id");
             let fileItem = $(this).closest("li");
@@ -315,43 +310,5 @@ $employees = mysqli_query($conn, "SELECT * FROM `users` WHERE `role`='employee' 
                 });
             }
         });
-    });
-    document.addEventListener('DOMContentLoaded', function() {
-        const typeSelect = document.getElementById('type');
-        const hourlyRateContainer = document.getElementById('hourly_rate_container');
-
-        // Function to toggle hourly rate visibility
-        function toggleHourlyRateVisibility() {
-            if (typeSelect.value === 'hourly') {
-                hourlyRateContainer.style.display = 'block'; // Show the hourly rate input
-            } else {
-                hourlyRateContainer.style.display = 'none'; // Hide the hourly rate input
-            }
-        }
-
-        // Initial check to toggle visibility based on the current type value
-        toggleHourlyRateVisibility();
-
-        // Add event listener to the type select input to toggle visibility when changed
-        typeSelect.addEventListener('change', toggleHourlyRateVisibility);
-    });
-    document.addEventListener('DOMContentLoaded', function() {
-        const typeSelect = document.getElementById('type');
-        const hourlyRateContainer = document.getElementById('hourly_rate_container');
-
-        // Function to toggle hourly rate visibility
-        function toggleHourlyRateVisibility() {
-            if (typeSelect.value === 'hourly') {
-                hourlyRateContainer.style.display = 'block'; // Show the hourly rate input
-            } else {
-                hourlyRateContainer.style.display = 'none'; // Hide the hourly rate input
-            }
-        }
-
-        // Initial check to toggle visibility based on the current type value
-        toggleHourlyRateVisibility();
-
-        // Add event listener to the type select input to toggle visibility when changed
-        typeSelect.addEventListener('change', toggleHourlyRateVisibility);
     });
 </script>

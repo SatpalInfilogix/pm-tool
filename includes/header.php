@@ -91,12 +91,94 @@ $cacheBuster = '?v=' . time();
                         </button>
                     </div>
 
+                    <?php
+                    // Fetch notifications for dropdown with unread count
+                    function getUnreadNotificationsCount($userProfile)
+                    {
+                        global $conn;
+                        if ($userProfile['role'] === 'employee') {
+                            $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND read_status = 0");
+                            $stmt->bind_param("i", $userProfile['id']);
+                        } else {
+                            $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM notifications WHERE read_status = 0");
+                        }
+                        $count = 0;
+                        if ($stmt && $stmt->execute()) {
+                            $result = $stmt->get_result();
+                            $row = $result->fetch_assoc();
+                            $count = $row['cnt'] ?? 0;
+                        }
+                        return $count;
+                    }
+
+                    function getLatestNotifications($userProfile, $limit = 5)
+                    {
+                        global $conn;
+                        $notifications = [];
+
+                        if ($userProfile['role'] === 'employee') {
+                            $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?");
+                            $stmt->bind_param("ii", $userProfile['id'], $limit);
+                        } else {
+                            $stmt = $conn->prepare("SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?");
+                            $stmt->bind_param("i", $limit);
+                        }
+
+                        if ($stmt && $stmt->execute()) {
+                            $result = $stmt->get_result();
+                            while ($row = $result->fetch_assoc()) {
+                                $notifications[] = $row;
+                            }
+                        }
+
+                        return $notifications;
+                    }
+
+                    $unreadCount = getUnreadNotificationsCount($userProfile);
+                    $latestNotifications = getLatestNotifications($userProfile, 5);
+                    ?>
+
+
+                    <style>
+                        .unread-notification {
+                            background-color: rgba(13, 110, 253, 0.08);
+                            /* Soft primary bg */
+                            border-left: 4px solid #0d6efd;
+                        }
+
+                        .unread-notification h6 {
+                            color: rgba(0, 0, 0, 0.74);
+                            font-weight: 700;
+                        }
+
+                        .notification-item {
+                            padding: 3px 3px;
+                            transition: background 0.2s ease;
+                        }
+
+                        .notification-item:hover {
+                            background-color: #f8f9fa;
+                        }
+
+                        .new-badge {
+                            background-color: #0d6efd;
+                            color: white;
+                            font-size: 10px;
+                            padding: 2px 6px;
+                            border-radius: 10px;
+                            margin-left: 6px;
+                        }
+                    </style>
+
+
 
                     <div class="dropdown d-inline-block">
                         <button type="button" class="btn header-item noti-icon waves-effect" id="page-header-notifications-dropdown"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="bx bx-bell bx-tada"></i>
-                            <span class="badge bg-danger rounded-pill"><?php echo count($notifications); ?></span>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="badge bg-danger rounded-pill"><?php echo $unreadCount; ?></span>
+                            <?php endif; ?>
                         </button>
                         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
                             aria-labelledby="page-header-notifications-dropdown">
@@ -106,39 +188,46 @@ $cacheBuster = '?v=' . time();
                                         <h6 class="m-0" key="t-notifications">Notification</h6>
                                     </div>
                                     <div class="col-auto">
-                                        <a href="<?php echo BASE_URL; ?>/notifications.php" class="btn btn-sm btn-link font-size-14 text-center">view more</a>
-
+                                        <a href="<?php echo BASE_URL; ?>/notifications.php" class="btn btn-sm btn-link font-size-14 text-center">View More</a>
                                     </div>
                                 </div>
                             </div>
 
-                            <?php foreach (array_slice($notifications, 0, 5) as $noti): ?>
+                            <?php foreach ($latestNotifications as $noti): ?>
                                 <?php
-                                // Default link
-                                $link = BASE_URL . '/leaves/index.php';
+                                $link = $noti['link'] ?? '#';
 
-                                // If the notification message contains 'assigned to a new project', override the link
-                                if (strpos($noti['message'], 'assigned to a new project') !== false) {
+                                if ($userProfile['role'] === 'employee' && strpos($noti['message'], 'assigned to a new project') !== false) {
                                     $link = BASE_URL . '/projects/index.php';
-                                } elseif (strpos($noti['message'], 'leave request') !== false) {
-                                    // leave request messages stay linked to leaves page or you can customize per leave ID if stored
-                                    $link = BASE_URL . '/leaves/index.php';
+                                } else {
+                                    if (strpos($link, 'http') === 0) {
+                                        // full URL
+                                    } elseif (strpos($link, '/') === 0) {
+                                        $link = BASE_URL . $link;
+                                    } else {
+                                        $link = BASE_URL . '/' . $link;
+                                    }
                                 }
                                 ?>
-                                <a href="<?php echo htmlspecialchars($link); ?>" class="text-reset notification-item">
-                                    <div class="d-flex">
+                                <a href="<?php echo BASE_URL . '/notification-redirect.php?noti_id=' . $noti['id']; ?>"
+                                    class="text-reset notification-item d-block <?php echo $noti['read_status'] == 0 ? 'unread-notification' : ''; ?>">
+                                    <div class="d-flex align-items-start">
                                         <div class="avatar-xs me-3">
-                                            <span class="avatar-title bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 32px;">
+                                            <span class="avatar-title bg-info text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width: 30px; height: 30px;">
                                                 <i class="bx bxs-bell"></i>
                                             </span>
                                         </div>
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1"><?php echo htmlspecialchars($noti['message']); ?></h6>
+                                            <h6 class="mb-1">
+                                                <?php echo htmlspecialchars($noti['message']); ?>
+                                                <?php if ($noti['read_status'] == 0): ?>
+                                                    <span class="new-badge">NEW</span>
+                                                <?php endif; ?>
+                                            </h6>
                                             <div class="font-size-12 text-muted">
-                                                <p class="mb-0">
-                                                    <i class="mdi mdi-clock-outline"></i>
-                                                    <?php echo htmlspecialchars($noti['created_at']); ?>
-                                                </p>
+                                                <i class="mdi mdi-clock-outline"></i>
+                                                <?php echo htmlspecialchars($noti['created_at']); ?>
                                             </div>
                                         </div>
                                     </div>
@@ -146,19 +235,20 @@ $cacheBuster = '?v=' . time();
                             <?php endforeach; ?>
 
 
-
-                            <?php if (count($notifications) > 5): ?>
+                            <?php if (count($latestNotifications) >= 5): ?>
                                 <div class="p-2 border-top d-grid">
                                     <a class="btn btn-sm btn-link font-size-14 text-center" href="<?php echo BASE_URL; ?>/notifications.php">
                                         <i class="mdi mdi-arrow-right-circle me-1"></i> <span key="t-view-more">View More..</span>
                                     </a>
-
                                 </div>
-
                             <?php endif; ?>
-
                         </div>
                     </div>
+
+
+
+
+
 
                     <div class="dropdown d-inline-block">
                         <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown"

@@ -30,8 +30,8 @@ if (isset($_POST['edit-policies'])) {
                 $absolutePath = '../' . $relativePath;
 
                 if (move_uploaded_file($tmpName, $absolutePath)) {
-                    $fullUrl = BASE_URL . '/' . $relativePath;
-                    $uploadedFiles[] = $fullUrl;
+                    $uploadedFiles[] = $relativePath; // Only relative path
+
                 }
             }
         }

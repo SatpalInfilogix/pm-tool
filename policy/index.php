@@ -50,11 +50,7 @@ $userRole = $userProfile['role']; ?>
                                     $fileUrl = htmlspecialchars($file);
                                     $fileName = basename($file);
                                     $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                                        echo "<img src='$fileUrl' alt='$fileName' style='max-width: 100px; display: block; margin-bottom: 5px;'>";
-                                    } else {
-                                        echo "<a href='$fileUrl' target='_blank'>$fileName</a><br>";
-                                    }
+                                    echo "<a href='$fileUrl' target='_blank'>$fileName</a><br>";
                                 }
                             }
 

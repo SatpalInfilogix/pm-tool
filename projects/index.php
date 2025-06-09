@@ -18,18 +18,21 @@
               <?php
                 if ($userRole == 'employee') {
                     $sql = "SELECT p.*, GROUP_CONCAT(e.name SEPARATOR ', ') AS assigned_employees
-            FROM projects p 
-            LEFT JOIN employee_projects ep ON p.id = ep.project_id 
-            LEFT JOIN users e ON ep.employee_id = e.id 
-            WHERE ep.employee_id = '$userId' AND e.role = 'employee'
-            GROUP BY p.id";
+        FROM projects p 
+        LEFT JOIN employee_projects ep ON p.id = ep.project_id 
+        LEFT JOIN users e ON ep.employee_id = e.id 
+        WHERE ep.employee_id = '$userId' AND e.role = 'employee'
+        GROUP BY p.id
+        ORDER BY p.id DESC";  // <-- latest projects first
                 } else {
                     $sql = "SELECT p.*, GROUP_CONCAT(u.name SEPARATOR ', ') AS assigned_employees
-            FROM projects p 
-            LEFT JOIN employee_projects ep ON p.id = ep.project_id 
-            LEFT JOIN users u ON ep.employee_id = u.id 
-            GROUP BY p.id";
+        FROM projects p 
+        LEFT JOIN employee_projects ep ON p.id = ep.project_id 
+        LEFT JOIN users u ON ep.employee_id = u.id 
+        GROUP BY p.id
+        ORDER BY p.id DESC";  // <-- latest projects first
                 }
+
 
                 $query = mysqli_query($conn, $sql);
                 $projects = mysqli_fetch_all($query, MYSQLI_ASSOC);

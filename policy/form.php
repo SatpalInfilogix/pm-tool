@@ -1,26 +1,30 @@
 <form method="POST" name="policies-form" id="policies-form" class="p-3" enctype="multipart/form-data">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="mb-2">
-                <label for="name">Name</label> <span class="text-danger">*</span>
+    <div class="card shadow-sm p-3 rounded">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" name="name" required minlength="2"
                     value="<?php echo isset($row['name']) ? $row['name'] : ''; ?>">
             </div>
-        </div>
 
-        <div class="col-md-3">
-            <div class="mb-2">
-                <label for="file"> Document</label>
-                <input type="file" class="form-control" id="file" name="file[]" required multiple
+            <div class="col-md-6 mb-3">
+                <label for="file" class="form-label">Document</label>
+                <input type="file" class="form-control" id="file" name="file[]" <?php echo isset($row['file']) ? '' : 'required'; ?> multiple
                     accept="image/*, .doc, .docx, .txt, .pdf, .mp4, .avi, .mov">
-                <small class="text-muted">Allowed file types: Images, DOC, TXT, PDF, Videos</small>
+                <small class="text-muted">Allowed file types: Images, DOC, TXT, PDF</small>
             </div>
         </div>
-        <?php if (isset($row['file']) && !empty($row['file'])): ?>
-            <div class="col-md-2">
-                <div class="mb-2">
-                    <label>Uploaded Files</label>
-                    <ul class="list-u   nstyled" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+
+        <div class="row">
+            <div class="col-md-10 mb-3">
+                <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                <textarea class="form-control" name="description" id="description" rows="6"><?php echo isset($row['description']) ? $row['description'] : ''; ?></textarea>
+            </div>
+
+            <?php if (isset($row['file']) && !empty($row['file'])): ?>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">Uploaded Files</label>
+                    <ul class="list-unstyled border rounded p-2" style="max-height: 270px; overflow-y: auto;">
                         <?php
                         $files = is_array($row['file']) ? $row['file'] : explode(',', $row['file']);
                         $base_url = '/uploads/';
@@ -29,11 +33,11 @@
                             $file = trim($file);
                             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                         ?>
-                            <li style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="flex-grow: 1;">
+                            <li class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="me-2">
                                     <?php if (in_array($ext, $image_extensions)): ?>
-                                        <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
-                                            <img src="<?php echo htmlspecialchars($file); ?>" alt="Uploaded Image" style="max-width: 100%; height: auto; max-height: 100px; border-radius: 5px;" />
+                                        <a href="<?php echo  htmlspecialchars($file); ?>" target="_blank">
+                                            <img src="<?php echo htmlspecialchars($file); ?>" alt="File" class="img-thumbnail" style="max-height: 100px;">
                                         </a>
                                     <?php else: ?>
                                         <a href="<?php echo BASE_URL . '/' . htmlspecialchars($file); ?>" target="_blank">
@@ -41,68 +45,46 @@
                                         </a>
                                     <?php endif; ?>
                                 </div>
-                                <div>
-                                    <button type="button" class="btn btn-outline-danger btn-sm remove-file-btn m-2" data-file="<?php echo htmlspecialchars($file); ?>" title="Remove file">
-                                        <i class="fa fa-trash"></i> 
-                                    </button>
-                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-file-btn" data-file="<?php echo htmlspecialchars($file); ?>" title="Remove file">
+                                    <i class="fa fa-trash"></i>
+                                </button>
                             </li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
 
-    </div>
+        <input type="hidden" name="id" value="<?php echo isset($row['id']) ? $row['id'] : ''; ?>">
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="mb-2">
-                <label for="description">Description<span class="text-danger">*</span></label>
-                <textarea class="form-control" name="description" id="description"><?php echo isset($row['description']) ? $row['description'] : ''; ?></textarea>
-            </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary" name="<?php echo isset($row['id']) ? 'edit-policies' : 'add_policies'; ?>">
+                <?php echo isset($row['id']) ? 'Update' : 'Submit'; ?>
+            </button>
         </div>
     </div>
-
-    <input type="hidden" name="id" value="<?php echo isset($row['id']) ? $row['id'] : ''; ?>">
-
-    <div class="col-md-3">
-        <button type="submit" class="btn btn-primary " name="<?php echo isset($row['id']) ? 'edit-policies' : 'add_policies'; ?>">
-            <?php echo isset($row['id']) ? 'Update' : 'Submit'; ?>
-        </button>
-    </div>
-
 </form>
-
 
 <script>
     $(document).ready(function() {
-        $('[data-bs-toggle="tooltip"]').tooltip();
-
-        $('select[name="type"]').select2({
-            width: '100%'
+        $('#description').summernote({
+            height: 200
         });
-
-
-        var isEditMode = $("input[name='id']").val() !== "";
-        $('#description').summernote();
 
         $('#policies-form').validate({
             ignore: [],
             rules: {
                 name: "required",
-                file: "required",
+                <?php if (!isset($row['file'])): ?>
+                    file: "required",
+                <?php endif; ?>
             },
-
             messages: {
                 name: "Please enter policy name",
-                file: "Please select a file",
-
+                file: "Please select at least one file"
             },
-
             errorPlacement: function(error, element) {
                 error.addClass("invalid-feedback");
-
                 if (element.hasClass("form-select")) {
                     error.insertAfter(element.next('.select2'));
                 } else {
@@ -123,38 +105,16 @@
             }
         });
 
-        $('select[name="type"]').on('change', function() {
-            $(this).valid();
-        });
-
-
-        $("#recurring").on("change", function() {
-            if ($(this).is(":checked")) {
-                $(this).val(1);
-            } else {
-                $(this).val(0);
-            }
-
-        });
-    });
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('policies-form');
-
+        // Handle file removal
         document.querySelectorAll('.remove-file-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const file = this.getAttribute('data-file');
-
-                // Remove the file's <li> element from the UI
                 this.closest('li').remove();
-
-                // Add a hidden input to the form to submit removed files
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'remove_files[]';
                 input.value = file;
-                form.appendChild(input);
+                document.getElementById('policies-form').appendChild(input);
             });
         });
     });
