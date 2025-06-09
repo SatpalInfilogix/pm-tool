@@ -2,6 +2,7 @@
 require_once '../includes/db.php';
 require_once '../includes/functions.php';
 
+
 if (isset($_POST['submit_attendance'])) {
     $date = $_POST['date'];
     $employee_ids = $_POST['employee_id'];
@@ -68,8 +69,8 @@ if (isset($_POST['submit_attendance'])) {
         exit();
     }
 }
-
 require_once '../includes/header.php';
+
 
 if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr') {
     $usersQuery = "SELECT id, name FROM users WHERE role != 'admin'";
@@ -248,3 +249,4 @@ while ($row = mysqli_fetch_assoc($attendanceResult)) {
         });
     });
 </script>
+<?php require_once '../includes/footer.php'; ?>
