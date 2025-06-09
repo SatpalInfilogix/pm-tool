@@ -5,33 +5,6 @@ require_once './includes/db.php';
 
 $userProfile = userProfile();
 
-
-
-// Get notifications (do NOT mark them as read here)
-function getNotifications($userProfile)
-{
-    global $conn;
-    $notifications = [];
-
-    if ($userProfile['role'] === 'employee') {
-        $sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $userProfile['id']);
-    } else {
-        $sql = "SELECT * FROM notifications ORDER BY created_at DESC";
-        $stmt = $conn->prepare($sql);
-    }
-
-    if ($stmt && $stmt->execute()) {
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $notifications[] = $row;
-        }
-    }
-
-    return $notifications;
-}
-
 $notifications = getNotifications($userProfile);
 ?>
 
@@ -43,7 +16,7 @@ $notifications = getNotifications($userProfile);
 
     .unread-notification td:first-child {
         font-weight: 400;
-        color:rgba(21, 21, 21, 0.79);
+        color: rgba(21, 21, 21, 0.79);
         font-size: 1rem;
     }
 
@@ -102,8 +75,15 @@ $notifications = getNotifications($userProfile);
                             <td>
                                 <?php
                                 $link = $noti['link'] ?? '#';
+
                                 if ($userProfile['role'] === 'employee' && strpos($noti['message'], 'assigned to a new project') !== false) {
                                     $link = BASE_URL . '/projects/index.php';
+                                } elseif (strpos($noti['message'], 'milestone') !== false) {
+                                    // Example: if notification is about milestone, link to milestone details
+                                    $milestoneId = $noti['milestone_id'] ?? null; // make sure this column exists in your notifications table
+                                    if ($milestoneId) {
+                                        $link = BASE_URL . '/milestones/edit.php?id=' . intval($milestoneId);
+                                    }
                                 } else {
                                     if (strpos($link, 'http') === 0) {
                                         // full URL
@@ -114,6 +94,7 @@ $notifications = getNotifications($userProfile);
                                     }
                                 }
                                 ?>
+
                                 <?php if (!empty($link) && $link !== '#'): ?>
                                     <a href="<?php echo htmlspecialchars($link); ?>" class="btn btn-sm btn-outline-primary">View</a>
                                 <?php else: ?>

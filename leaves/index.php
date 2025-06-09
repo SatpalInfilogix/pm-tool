@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status']) && i
         if ($leaveDetails) {
             $message = "Your leave request from {$leaveDetails['start_date']} to {$leaveDetails['end_date']} has been " . ucfirst($newStatus);
             $link = BASE_URL . "/leaves/index.php";
-            $empId = $leaveDetails['user_id'];
+            $empId = $leaveDetails['user_id']; // ✅ This is the employee ID
 
             $notify = $conn->prepare("INSERT INTO notifications (user_id, message, link, created_at) VALUES (?, ?, ?, NOW())");
             $notify->bind_param("iss", $empId, $message, $link);

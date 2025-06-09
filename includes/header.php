@@ -96,33 +96,45 @@ $cacheBuster = '?v=' . time();
                     function getUnreadNotificationsCount($userProfile)
                     {
                         global $conn;
-                        if ($userProfile['role'] === 'employee') {
-                            $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND read_status = 0");
-                            $stmt->bind_param("i", $userProfile['id']);
-                        } else {
-                            $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM notifications WHERE read_status = 0");
-                        }
+                        $stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND read_status = 0");
+                        $stmt->bind_param("i", $userProfile['id']);
+
                         $count = 0;
                         if ($stmt && $stmt->execute()) {
                             $result = $stmt->get_result();
                             $row = $result->fetch_assoc();
                             $count = $row['cnt'] ?? 0;
                         }
+
                         return $count;
                     }
+
+                    
+                    function getNotifications($userProfile)
+                    {
+                        global $conn;
+                        $notifications = [];
+
+                        $sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("i", $userProfile['id']);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $notifications = $result->fetch_all(MYSQLI_ASSOC);
+
+                        return $notifications;
+                    }
+
+
 
                     function getLatestNotifications($userProfile, $limit = 5)
                     {
                         global $conn;
                         $notifications = [];
 
-                        if ($userProfile['role'] === 'employee') {
-                            $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?");
-                            $stmt->bind_param("ii", $userProfile['id'], $limit);
-                        } else {
-                            $stmt = $conn->prepare("SELECT * FROM notifications ORDER BY created_at DESC LIMIT ?");
-                            $stmt->bind_param("i", $limit);
-                        }
+                        // Always show only notifications for the logged-in user
+                        $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?");
+                        $stmt->bind_param("ii", $userProfile['id'], $limit);
 
                         if ($stmt && $stmt->execute()) {
                             $result = $stmt->get_result();
@@ -133,6 +145,7 @@ $cacheBuster = '?v=' . time();
 
                         return $notifications;
                     }
+
 
                     $unreadCount = getUnreadNotificationsCount($userProfile);
                     $latestNotifications = getLatestNotifications($userProfile, 5);

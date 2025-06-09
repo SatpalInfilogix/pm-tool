@@ -23,6 +23,34 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     if (mysqli_num_rows($result) > 0) {
         $milestone = mysqli_fetch_assoc($result);
 
+        // === Fetch and Update Invoice Number ===
+        // Check if milestone already has invoice number
+        if (!empty($milestone['invoice_no'])) {
+            $invoice_no_formatted = $milestone['invoice_no'];
+        } else {
+            // Fetch counter and increment (as above)
+            $counter_result = mysqli_query($conn, "SELECT id, last_invoice_no FROM milestone_invoice_counter ORDER BY id DESC LIMIT 1");
+
+            if ($counter_result && mysqli_num_rows($counter_result) > 0) {
+                $row = mysqli_fetch_assoc($counter_result);
+                $current_invoice_no = $row['last_invoice_no'] + 1;
+
+                $row_id = intval($row['id']);
+                mysqli_query($conn, "UPDATE milestone_invoice_counter SET last_invoice_no = $current_invoice_no WHERE id = $row_id");
+
+                $invoice_no_formatted = str_pad($current_invoice_no, 4, '0', STR_PAD_LEFT);
+            } else {
+                mysqli_query($conn, "INSERT INTO milestone_invoice_counter (last_invoice_no) VALUES (1)");
+                $invoice_no_formatted = '0001';
+            }
+
+            // Save invoice number in milestone (so it stays fixed)
+            mysqli_query($conn, "UPDATE project_milestones SET invoice_no = '$invoice_no_formatted' WHERE id = $id");
+        }
+
+
+        // ========================================
+
         // Create HTML for PDF
 
         $currency_symbols = [
@@ -45,6 +73,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $plain_text = strip_tags(html_entity_decode($milestone['description'], ENT_QUOTES, 'UTF-8'));
         $plain_text = trim($plain_text);
         $description_html = '<div style="white-space: pre-wrap; direction: ltr; text-align: left;">' . htmlspecialchars($plain_text, ENT_QUOTES, 'UTF-8') . '</div>';
+        $invoice_id_display = 'INV-' . $invoice_no_formatted;
 
 
         $html = '<meta charset="UTF-8">
@@ -89,9 +118,9 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         </style>
         
         <h1 style="color: #F3C100;">Invoice</h1>
-        <h5>Invoice No <b style="color:black;">#0001</b></h5>
-<h5>Invoice Date: <b style="color:black;">' . gmdate("F j, Y") . '</b></h5>
-        
+        <h5>Invoice No <b style="color:black;">#' . $invoice_id_display . '</b></h5>
+        <h5>Invoice Date: <b style="color:black;">' . gmdate("F j, Y") . '</b></h5>
+                
         <table>
             <tr>
                 <td>
