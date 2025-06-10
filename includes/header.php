@@ -161,12 +161,11 @@ $cacheBuster = '?v=' . time();
 
                         .unread-notification h6 {
                             color: rgba(0, 0, 0, 0.74);
-                            font-weight: 700;
+                            font-weight: 600;
                         }
 
                         .notification-item {
-                            padding: 3px 3px;
-                            transition: background 0.2s ease;
+                            padding: 1px 1px;
                         }
 
                         .notification-item:hover {

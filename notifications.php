@@ -141,5 +141,5 @@ if (isset($_GET['mark_read']) && is_numeric($_GET['mark_read'])) {
 </script>
 
 <?php require_once './includes/footer.php'; 
-ob_end_flush(); 
+ob_end_flush();
 ?>
