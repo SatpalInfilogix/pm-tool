@@ -1,11 +1,26 @@
-<?php require_once './includes/header.php'; ?>
-<?php
+<?php 
+ob_start();
+require_once './includes/header.php';
 require_once './includes/db.php';
-
-
 $userProfile = userProfile();
-
 $notifications = getNotifications($userProfile);
+
+if (isset($_GET['mark_read']) && is_numeric($_GET['mark_read'])) {
+    $notificationId = intval($_GET['mark_read']);
+
+    // Optional: Check ownership if needed
+    $stmt = $conn->prepare("UPDATE notifications SET read_status = 1 WHERE id = ?");
+    $stmt->bind_param("i", $notificationId);
+    $stmt->execute();
+    $stmt->close();
+
+    if (isset($_GET['redirect_to'])) {
+        $redirectUrl = urldecode($_GET['redirect_to']);
+        header("Location: $redirectUrl");
+        exit;
+    }
+}
+
 ?>
 
 <!-- STYLING -->
@@ -96,7 +111,7 @@ $notifications = getNotifications($userProfile);
                                 ?>
 
                                 <?php if (!empty($link) && $link !== '#'): ?>
-                                    <a href="<?php echo htmlspecialchars($link); ?>" class="btn btn-sm btn-outline-primary">View</a>
+                                    <a href="?mark_read=<?php echo $noti['id']; ?>&redirect_to=<?php echo urlencode($link); ?>" class="btn btn-sm btn-outline-primary">View</a>
                                 <?php else: ?>
                                     <span class="text-muted">No link</span>
                                 <?php endif; ?>
@@ -125,4 +140,6 @@ $notifications = getNotifications($userProfile);
     });
 </script>
 
-<?php require_once './includes/footer.php'; ?>
+<?php require_once './includes/footer.php'; 
+ob_end_flush(); 
+?>
