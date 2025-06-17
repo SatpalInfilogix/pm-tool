@@ -20,49 +20,52 @@ $userRole = $userProfile['role']; ?>
 
 <div class="card">
     <div class="card-body">
-        <table id="invoiceTable" class="table table-sm">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Invoice ID</th>
-                    <th>Date</th>
-                    <th>Billed By</th>
-                    <th>Billed To</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $sql = "SELECT * FROM invoices ORDER BY invoice_date DESC";
-                $result = $conn->query($sql);
+        <div class="table-responsive"> <!-- Added for responsiveness -->
+            <table id="invoiceTable" class="table table table-bordered table-stripedd">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Invoice ID</th>
+                        <th>Date</th>
+                        <th>Billed By</th>
+                        <th>Billed To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $sql = "SELECT * FROM invoices ORDER BY invoice_date DESC";
+                    $result = $conn->query($sql);
 
-                $invoices = $result->fetch_all(MYSQLI_ASSOC);
-                $count = 1;
-                foreach ($invoices as $row) {
-                    echo "<tr>";
-                    echo "<td>" . $count++ . "</td>";
-                    echo "<td>" . htmlspecialchars($row['invoice_id']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['invoice_date']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['billed_by_name']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['billed_to_client_company_name']) . "</td>";
-                    echo "<td>";
-                    echo "<a href='./edit.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'><i class='bx bx-edit fs-5'></i></a> ";
+                    $invoices = $result->fetch_all(MYSQLI_ASSOC);
+                    $count = 1;
+                    foreach ($invoices as $row) {
+                        echo "<tr>";
+                        echo "<td>" . $count++ . "</td>";
+                        echo "<td>" . htmlspecialchars($row['invoice_id']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['invoice_date']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['billed_by_name']) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['billed_to_client_company_name']) . "</td>";
+                        echo "<td>";
+                        echo "<a href='./edit.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'><i class='bx bx-edit fs-5'></i></a> ";
 
-                    if ($userRole === 'admin' || $userRole === 'hr') {
-                        echo "<button class='btn btn-danger btn-sm delete-btn' data-table-name='invoices' data-id='" . htmlspecialchars($row['id']) . "'><i class='bx bx-trash fs-5'></i></button> ";
+                        if ($userRole === 'admin' || $userRole === 'hr') {
+                            echo "<button class='btn btn-danger btn-sm delete-btn' data-table-name='invoices' data-id='" . htmlspecialchars($row['id']) . "'><i class='bx bx-trash fs-5'></i></button> ";
+                        }
+
+                        echo "<a href='./download.php?id=" . $row['id'] . "' class='btn btn-success btn-sm'><i class='bx bx-download fs-5'></i></a>";
+                        echo "</td>";
+                        echo "</tr>";
                     }
 
-                    echo "<a href='./download.php?id=" . $row['id'] . "' class='btn btn-success btn-sm'><i class='bx bx-download fs-5'></i></a>";
-                    echo "</td>";
-                    echo "</tr>";
-                }
+                    ?>
+                </tbody>
 
-                ?>
-            </tbody>
-
-        </table>
+            </table>
+        </div>
     </div>
 </div>
+
 
 <script>
     $(document).ready(function() {
@@ -78,7 +81,6 @@ $userRole = $userProfile['role']; ?>
             document.getElementById('update-success-msg')?.remove();
         }, 3000);
     });
-
 </script>
 
 

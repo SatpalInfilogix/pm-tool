@@ -52,52 +52,55 @@
 
         <div class="card p-3">
             <div class="card-body">
-                <table class="table table-sm" id="daily-report">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Project Name</th>
-                            <th>Employee Name</th>
-                            <th>Chargable Hours</th>
-                            <th>Non Chargable Hours</th>
-                            <th>Created Time</th>
-                            <?php if ($userRole === 'admin' || $userRole === 'hr') { ?>
-                                <th>Updated Time</th>
-                            <?php } ?>
-                            <?php if ($userRole === 'admin') { ?>
-                                <th>Action</th>
-                            <?php } ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        foreach ($projects as $key => $row) { ?>
+                <div class="table-responsive"> <!-- Added for responsiveness -->
+                    <table class="table table-sm" id="daily-report">
+                        <thead>
                             <tr>
-                                <td><?php echo $key + 1; ?></td>
-                                <td><?php echo htmlspecialchars($row['name']); ?></td>
-                                <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                <td><?php echo $row['chargable_hours']; ?></td>
-                                <td>
-                                    <?php
-                                    echo ($row['type'] === 'hourly') ? $row['non_chargable_hours'] : '-';
-                                    ?>
-                                </td>
-
-                                <td><?php echo $row['created_at']; ?></td>
+                                <th>#</th>
+                                <th>Project Name</th>
+                                <th>Employee Name</th>
+                                <th>Chargable Hours</th>
+                                <th>Non Chargable Hours</th>
+                                <th>Created Time</th>
                                 <?php if ($userRole === 'admin' || $userRole === 'hr') { ?>
-                                    <td><?php echo $row['updated_at']; ?></td>
+                                    <th>Updated Time</th>
                                 <?php } ?>
                                 <?php if ($userRole === 'admin') { ?>
-                                    <td>
-                                        <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary">Edit</a>
-                                    </td>
+                                    <th>Action</th>
                                 <?php } ?>
                             </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php
+                            foreach ($projects as $key => $row) { ?>
+                                <tr>
+                                    <td><?php echo $key + 1; ?></td>
+                                    <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                                    <td><?php echo $row['chargable_hours']; ?></td>
+                                    <td>
+                                        <?php
+                                        echo ($row['type'] === 'hourly') ? $row['non_chargable_hours'] : '-';
+                                        ?>
+                                    </td>
+
+                                    <td><?php echo $row['created_at']; ?></td>
+                                    <?php if ($userRole === 'admin' || $userRole === 'hr') { ?>
+                                        <td><?php echo $row['updated_at']; ?></td>
+                                    <?php } ?>
+                                    <?php if ($userRole === 'admin') { ?>
+                                        <td>
+                                            <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary">Edit</a>
+                                        </td>
+                                    <?php } ?>
+                                </tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
     </div>
 
     <script>

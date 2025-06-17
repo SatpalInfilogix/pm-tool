@@ -24,7 +24,7 @@ if ($reqResult && $reqResult->num_rows > 0) {
 
 $user_values = userProfile();
 
-if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin' && $user_values['role'] !== 'team leader')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
     header("Location: " . $redirectUrl);
@@ -52,6 +52,76 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     echo "<p class='text-danger'>Invalid request!</p>";
     exit;
 }
+$dueDateChangeNote = '';
+if (!empty($milestoneRequest) && $milestoneRequest['status'] === 'approved' && $milestoneRequest['new_due_date'] === $row['due_date']) {
+    $dueDateChangeNote = " (Updated via employee request)";
+}
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['milestone_request_id'], $_POST['decision'])) {
+    require_once '../includes/db.php';
+
+    $requestId = (int)$_POST['milestone_request_id'];
+    $decision = $_POST['decision'] === 'approved' ? 'approved' : 'rejected';
+
+    // Fetch request and employee info
+    $reqSql = "SELECT mr.*, u.name AS employee_name, u.id AS employee_id, pm.milestone_name, p.name AS project_name
+               FROM milestone_requests mr
+               JOIN users u ON mr.employee_id = u.id
+               JOIN project_milestones pm ON mr.milestone_id = pm.id
+               JOIN projects p ON pm.project_id = p.id
+               WHERE mr.id = ?";
+    $stmt = $conn->prepare($reqSql);
+    $stmt->bind_param("i", $requestId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $request = $result->fetch_assoc();
+
+    if ($request) {
+        // Update milestone due_date if approved
+        if ($decision === 'approved') {
+            $updateMilestone = $conn->prepare("UPDATE project_milestones SET due_date = ? WHERE id = ?");
+            $updateMilestone->bind_param("si", $request['new_due_date'], $request['milestone_id']);
+            $updateMilestone->execute();
+        }
+
+        // Update request status
+        $updateStatus = $conn->prepare("UPDATE milestone_requests SET status = ? WHERE id = ?");
+        $updateStatus->bind_param("si", $decision, $requestId);
+        $updateStatus->execute();
+
+        // Notify employee
+        $message = "Your milestone due date change request for '{$request['milestone_name']}' in project '{$request['project_name']}' has been {$decision}.";
+        $link = "milestones/index.php";
+
+        $notifySql = "INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)";
+        $notifyStmt = $conn->prepare($notifySql);
+        $notifyStmt->bind_param("iss", $request['employee_id'], $message, $link);
+        $notifyStmt->execute();
+
+        // Mark related admin notifications as read
+        $milestoneId = $request['milestone_id'];
+        $adminLink = "milestones/edit.php?id=" . $milestoneId;
+
+        $markReadSql = "UPDATE notifications 
+                SET read_status = 1 
+                WHERE link = ? AND message LIKE ?";
+        $likeMessage = "%milestone '{$request['milestone_name']}' in project%";
+
+        $markStmt = $conn->prepare($markReadSql);
+        $markStmt->bind_param("ss", $adminLink, $likeMessage);
+        $markStmt->execute();
+
+
+        $_SESSION['toast'] = "Request {$decision} successfully.";
+    } else {
+        $_SESSION['toast'] = "Request not found.";
+    }
+
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 
 if (isset($_POST['edit-milestone'])) {
     $project_id = intval($_POST['project_id']);
@@ -79,8 +149,9 @@ if (isset($_POST['edit-milestone'])) {
             // Delete old files physically
             $oldFilesResult = mysqli_query($conn, "SELECT file_path FROM milestone_documents WHERE milestone_id = '$id'");
             while ($rowFile = mysqli_fetch_assoc($oldFilesResult)) {
-                if (file_exists($rowFile['file_path'])) {
-                    unlink($rowFile['file_path']);
+                $filePath = realpath($rowFile['file_path']);
+                if ($filePath && file_exists($filePath)) {
+                    unlink($filePath);
                 }
             }
 
@@ -136,18 +207,34 @@ if (isset($_POST['edit-milestone'])) {
         </div>
     </div>
 </div>
-<?php if (!empty($milestoneRequest)) { ?>
+<?php if (!empty($milestoneRequest) && $milestoneRequest['status'] === 'pending' && ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr')) { ?>
     <div class="alert alert-info mt-3" role="alert">
         <h5 class="alert-heading"><i class="bx bx-time"></i> Milestone Change Request</h5>
         <hr>
         <div class="space pt-0 mt-0">
             <p><strong>Requested By:</strong> <?php echo htmlspecialchars($milestoneRequest['employee_name']); ?></p>
-            <p><strong>New Due Date:</strong> <?php echo htmlspecialchars($milestoneRequest['requested_due_date']); ?></p>
+            <p><strong>Current Due Date:</strong> <?php echo htmlspecialchars($row['due_date']); ?></p>
+            <p><strong>New Due Date:</strong> <?php echo htmlspecialchars($milestoneRequest['new_due_date']); ?></p>
             <p><strong>Reason:</strong><br><?php echo nl2br(htmlspecialchars($milestoneRequest['reason'])); ?></p>
             <p class="mb-0 text-muted"><small>Submitted on: <?php echo date('d M Y, h:i A', strtotime($milestoneRequest['created_at'])); ?></small></p>
         </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <form method="post">
+                <input type="hidden" name="milestone_request_id" value="<?= $milestoneRequest['id'] ?>">
+                <input type="hidden" name="decision" value="approved">
+                <button type="submit" class="btn btn-success btn-sm"><i class="bx bx-check"></i> Accept</button>
+            </form>
+
+            <form method="post">
+                <input type="hidden" name="milestone_request_id" value="<?= $milestoneRequest['id'] ?>">
+                <input type="hidden" name="decision" value="rejected">
+                <button type="submit" class="btn btn-danger btn-sm"><i class="bx bx-x"></i> Reject</button>
+            </form>
+        </div>
     </div>
 <?php } ?>
+
 
 
 

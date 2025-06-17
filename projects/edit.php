@@ -4,11 +4,10 @@ require_once '../includes/header.php';
 $plugins = ['datepicker', 'select2'];
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin' && $user_values['role'] !== 'team leader')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 if (isset($_POST['edit_project']) && isset($_GET['id'])) {
@@ -34,7 +33,7 @@ if (isset($_POST['edit_project']) && isset($_GET['id'])) {
                 status = '$status', type = '$type', hourly_rate = '$hourly_rate', description = '$description', 
                 client_id = '$client', team_leader_id = " . ($team_leader ? "'$team_leader'" : "NULL") . "
             WHERE id = '$id'";
-            
+
 
     if (mysqli_query($conn, $sql)) {
         mysqli_query($conn, "DELETE FROM employee_projects WHERE project_id = '$id'");
@@ -97,7 +96,7 @@ if (isset($_GET['id'])) {
         </div>
 
         <?php include './form.php'; ?>
-        
+
 <?php
     } else {
         echo "Project not found.";

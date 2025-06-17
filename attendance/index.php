@@ -180,47 +180,50 @@ while ($row = mysqli_fetch_assoc($result)) {
 
         <div class="card">
             <div class="card-body">
-                <table id="attendanceTable" class="table table-bordered table-striped mt-3">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Date</th>
-                            <th>Employee Name</th>
-                            <th>In Time</th>
-                            <th>Out Time</th>
-                            <th>Status</th>
-                            <th>Working Hours</th>
-                            <th>Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $i = 1;
-                        foreach ($filteredRows as $row): ?>
+                <div class="table-responsive"> <!-- Added for responsiveness -->
+                    <table id="attendanceTable" class="table table-bordered table-striped mt-3">
+                        <thead>
                             <tr>
-                                <td><?php echo $i++; ?></td>
-                                <td><?php echo htmlspecialchars($row['date']); ?></td>
-                                <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
-                                <td><?php echo $row['in_time_display']; ?></td>
-                                <td><?php echo $row['out_time_display']; ?></td>
-                                <td>
-                                    <?php if (!empty($row['out_time_display']) && $row['out_time_display'] !== '-'): ?>
-                                        <span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>" title="<?php echo htmlspecialchars($row['worked_hours']); ?>">
-                                            <?php echo htmlspecialchars($row['derived_status']); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td><?php echo htmlspecialchars($row['worked_hours']); ?></td>
-                                <td><?php echo htmlspecialchars($row['note']); ?></td>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Employee Name</th>
+                                <th>In Time</th>
+                                <th>Out Time</th>
+                                <th>Status</th>
+                                <th>Working Hours</th>
+                                <th>Note</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $i = 1;
+                            foreach ($filteredRows as $row): ?>
+                                <tr>
+                                    <td><?php echo $i++; ?></td>
+                                    <td><?php echo htmlspecialchars($row['date']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['employee_name']); ?></td>
+                                    <td><?php echo $row['in_time_display']; ?></td>
+                                    <td><?php echo $row['out_time_display']; ?></td>
+                                    <td>
+                                        <?php if (!empty($row['out_time_display']) && $row['out_time_display'] !== '-'): ?>
+                                            <span class="badge bg-<?php echo htmlspecialchars($row['badge_class']); ?>" title="<?php echo htmlspecialchars($row['worked_hours']); ?>">
+                                                <?php echo htmlspecialchars($row['derived_status']); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <td><?php echo htmlspecialchars($row['worked_hours']); ?></td>
+                                    <td><?php echo htmlspecialchars($row['note']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
     </div>
 
     <script>

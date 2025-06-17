@@ -30,45 +30,48 @@ if (isset($_SESSION['toast'])):
 </div>
 <div class="card">
     <div class="card-body">
-        <?php
-        $sql = "SELECT * FROM holidays";
-        $query = mysqli_query($conn, $sql);
-        $holidays = mysqli_fetch_all($query, MYSQLI_ASSOC);
-        ?>
-        <table class="table table-striped" id="employeeTable">
-            <thead>
-                <th>#</th>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Type</th>
-                <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr'): ?>
-                    <th>Action</th>
-                <?php endif; ?>
+        <div class="table-responsive"> <!-- Added for responsiveness -->
+            <?php
+            $sql = "SELECT * FROM holidays";
+            $query = mysqli_query($conn, $sql);
+            $holidays = mysqli_fetch_all($query, MYSQLI_ASSOC);
+            ?>
+            <table class="table table-bordered table-striped" id="employeeTable">
+                <thead>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr'): ?>
+                        <th>Action</th>
+                    <?php endif; ?>
 
-            </thead>
-            <tbody>
-                <?php
-                foreach ($holidays as $key => $row) {
-                ?>
-                    <tr>
-                        <td><?php echo  $key + 1 ?></td>
-                        <td><?php echo $row['name'] ?></td>
-                        <td><?php echo $row['date'] ?></td>
-                        <td><?php echo $row['description'] ?></td>
-                        <td class="text-capitalize"><?php echo $row['type'] ?></td>
-                        <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr'): ?>
+                </thead>
+                <tbody>
+                    <?php
+                    foreach ($holidays as $key => $row) {
+                    ?>
+                        <tr>
+                            <td><?php echo  $key + 1 ?></td>
+                            <td><?php echo $row['name'] ?></td>
+                            <td><?php echo $row['date'] ?></td>
+                            <td><?php echo $row['description'] ?></td>
+                            <td class="text-capitalize"><?php echo $row['type'] ?></td>
+                            <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr'): ?>
 
-                            <td>
-                                <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-success btn-sm"><i class="bx bx-edit fs-5"></i></a>
-                                <button class="btn btn-danger btn-sm delete-btn" data-table-name="holidays" data-id="<?php echo $row['id'] ?>"><i class="bx bx-trash fs-5"></i></button>
-                            </td>
-                        <?php endif; ?>
+                                <td>
+                                    <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-success btn-sm"><i class="bx bx-edit fs-5"></i></a>
+                                    <button class="btn btn-danger btn-sm delete-btn" data-table-name="holidays" data-id="<?php echo $row['id'] ?>"><i class="bx bx-trash fs-5"></i></button>
+                                </td>
+                            <?php endif; ?>
 
-                    <?php  } ?>
-            </tbody>
+                        <?php  } ?>
+                </tbody>
+        </div>
     </div>
 </div>
+
 <script>
     $(document).ready(function() {
         $('#employeeTable').DataTable({

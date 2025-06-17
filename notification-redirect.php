@@ -40,8 +40,12 @@ $stmtMarkRead->execute();
 // Redirect to the actual link
 $link = $notification['link'] ?? '#';
 
-if ($userProfile['role'] === 'employee' && strpos($notification['message'], 'assigned to a new project') !== false) {
-    $link = BASE_URL . '/projects/index.php';
+if ($userProfile['role'] === 'employee') {
+    if (strpos($notification['message'], 'assigned to a new project') !== false) {
+        $link = BASE_URL . '/projects/index.php';
+    } elseif (strpos($notification['message'], 'milestone due date change request') !== false) {
+        $link = BASE_URL . '/milestones/index.php';
+    }
 } else {
     if (strpos($link, 'http') === 0) {
         // full URL, do nothing
@@ -55,4 +59,3 @@ if ($userProfile['role'] === 'employee' && strpos($notification['message'], 'ass
 header("Location: " . $link);
 exit;
 ob_end_flush();
-?>

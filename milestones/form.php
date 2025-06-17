@@ -65,7 +65,7 @@
             </div>
             <div class="col-md-3">
                 <div class="mb-3">
-                    <label for="due_date">Due Date</label> <span class="text-danger">*</span>
+                    <label for="due_date">Due Date<?= !empty($dueDateChangeNote) ? '<span class="text-info small">' . $dueDateChangeNote . '</span>' : '' ?></label> 
                     <input type="text" class="form-control" name="due_date" id="due_date" required
                         value="<?php echo isset($row['due_date']) ? $row['due_date'] : ''; ?>" autocomplete="off">
                 </div>

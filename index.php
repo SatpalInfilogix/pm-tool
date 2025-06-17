@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once './includes/db.php'; // Make sure DB connection is available
+require_once './includes/db.php';
 ?>
 <?php if (isset($_SESSION['toast'])): ?>
     <script>
@@ -21,85 +21,209 @@ require_once './includes/db.php'; // Make sure DB connection is available
         </div>
     </div>
 
-    <!-- Stats Cards -->
+    <?php
+    $userProfile = userProfile();
+    $userId = $userProfile['id'];
+    $role = $userProfile['role'];
+    ?>
+
     <div class="col-xl-12">
         <div class="row">
-            <!-- Employees -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-3">Employees</p>
-                                <h4 class="mb-0">
-                                    <?php
-                                    $result = mysqli_query($conn, "SELECT COUNT(*) FROM users");
-                                    $row = mysqli_fetch_array($result);
-                                    echo $row[0];
-                                    ?>
-                                </h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
-                                    <span class="avatar-title"><i class="bx bxs-user fs-2"></i></span>
+            <?php if ($role === 'admin' || $role === 'hr'): ?>
+                <!-- Admin/HR Cards -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-3">Employees</p>
+                                    <h4 class="mb-0">
+                                        <?php
+                                        $result = mysqli_query($conn, "SELECT COUNT(*) FROM users WHERE role = 'employee'");
+                                        $row = mysqli_fetch_array($result);
+                                        echo $row[0];
+                                        ?>
+                                    </h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
+                                        <span class="avatar-title"><i class="bx bxs-user fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Projects -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-3">Projects</p>
-                                <h4 class="mb-0">
-                                    <?php
-                                    $result = mysqli_query($conn, "SELECT COUNT(*) FROM projects");
-                                    $row = mysqli_fetch_array($result);
-                                    echo $row[0];
-                                    ?>
-                                </h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="avatar-sm rounded-circle bg-primary mini-stat-icon">
-                                    <span class="avatar-title"><i class="bx bx-briefcase-alt-2 fs-2"></i></span>
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-3">Projects</p>
+                                    <h4 class="mb-0">
+                                        <?php
+                                        $result = mysqli_query($conn, "SELECT COUNT(*) FROM projects");
+                                        $row = mysqli_fetch_array($result);
+                                        echo $row[0];
+                                        ?>
+                                    </h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="avatar-sm rounded-circle bg-primary mini-stat-icon">
+                                        <span class="avatar-title"><i class="bx bx-briefcase-alt-2 fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Clients -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-3">Clients</p>
-                                <h4 class="mb-0">
-                                    <?php
-                                    $result = mysqli_query($conn, "SELECT COUNT(*) FROM clients");
-                                    $row = mysqli_fetch_array($result);
-                                    echo $row[0];
-                                    ?>
-                                </h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="avatar-sm rounded-circle bg-primary mini-stat-icon">
-                                    <span class="avatar-title"><i class="bx bxs-user fs-2"></i></span>
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-3">Clients</p>
+                                    <h4 class="mb-0">
+                                        <?php
+                                        $result = mysqli_query($conn, "SELECT COUNT(*) FROM clients");
+                                        $row = mysqli_fetch_array($result);
+                                        echo $row[0];
+                                        ?>
+                                    </h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="avatar-sm rounded-circle bg-primary mini-stat-icon">
+                                        <span class="avatar-title"><i class="bx bxs-user fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            <?php endif; ?>
+        </div> <!-- End Admin/HR Row -->
+    </div> <!-- End Admin/HR Column -->
+
+
+
+    <?php if ($userProfile['role'] === 'employee'): ?>
+        <?php
+        $userId = $userProfile['id'];
+        $currentMonth = date('Y-m');
+        $today = date('Y-m-d');
+        $endOfWeek = date('Y-m-d', strtotime('+7 days'));
+
+        // Attendance count
+        $stmt1 = $conn->prepare("SELECT COUNT(*) FROM attendance WHERE employee_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?");
+        $stmt1->bind_param("is", $userId, $currentMonth);
+        $stmt1->execute();
+        $stmt1->bind_result($attendanceCount);
+        $stmt1->fetch();
+        $stmt1->close();
+
+        // Project count
+        $assignedProjectCount = 0;
+        $checkTable = mysqli_query($conn, "SHOW TABLES LIKE 'employee_projects'");
+        if (mysqli_num_rows($checkTable)) {
+            $stmt = $conn->prepare("
+        SELECT COUNT(DISTINCT p.id)
+        FROM projects p
+        JOIN employee_projects ep ON p.id = ep.project_id
+        WHERE ep.employee_id = ?
+    ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->bind_result($assignedProjectCount);
+            $stmt->fetch();
+            $stmt->close();
+        }
+
+        // Milestones due in next 7 days
+        $completedMilestoneCount = 0;
+        $checkMilestoneTable = mysqli_query($conn, "SHOW TABLES LIKE 'project_milestones'");
+        if (mysqli_num_rows($checkMilestoneTable)) {
+            $stmt = $conn->prepare("
+        SELECT COUNT(*) FROM project_milestones pm
+        JOIN projects p ON pm.project_id = p.id
+        JOIN employee_projects ep ON p.id = ep.project_id
+        WHERE ep.employee_id = ? AND pm.status = 'completed'
+    ");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $stmt->bind_result($completedMilestoneCount);
+            $stmt->fetch();
+            $stmt->close();
+        }
+
+        ?>
+
+        <div class="col-xl-12">
+            <div class="row">
+                <!-- Attendance -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">Days Attended</p>
+                                    <h4 class="mb-0"><?= $attendanceCount ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
+                                        <span class="avatar-title"><i class="bx bx-calendar-check fs-2"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned Projects -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">Projects</p>
+                                    <h4 class="mb-0"><?= $assignedProjectCount ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
+                                        <span class="avatar-title"><i class="bx bx-briefcase fs-2"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Upcoming Milestones -->
+                <!-- Completed Tasks -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">Completed Tasks</p>
+                                    <h4 class="mb-0"><?= $completedMilestoneCount ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
+                                        <span class="avatar-title"><i class="bx bx-check-double fs-2"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
-    </div>
+    <?php endif; ?>
+
 
 
 
@@ -109,12 +233,42 @@ require_once './includes/db.php'; // Make sure DB connection is available
     $userProfile = userProfile();
     $userId = $userProfile['id'];
     $userRole = $userProfile['role'];
-
     $currentDate = date('Y-m-d');
-    $sql = "SELECT pm.id, pm.milestone_name, pm.due_date, pm.status, p.name AS project_name
-    FROM project_milestones pm
-    JOIN projects p ON pm.project_id = p.id
-    WHERE pm.due_date <= '$currentDate'";
+
+    // SQL base
+    $sql = "SELECT 
+            pm.id, 
+            pm.milestone_name, 
+            pm.due_date, 
+            pm.status, 
+            p.name AS project_name";
+
+    // Only for admin/hr/team leader, add GROUP_CONCAT for multiple employees
+    if ($userRole !== 'employee') {
+        $sql .= ", GROUP_CONCAT(DISTINCT u.name SEPARATOR ', ') AS employee_names";
+    }
+
+    $sql .= " FROM project_milestones pm
+          JOIN projects p ON pm.project_id = p.id";
+
+    // Join only if not employee
+    if ($userRole !== 'employee') {
+        $sql .= " LEFT JOIN employee_projects ep ON ep.project_id = p.id
+              LEFT JOIN users u ON u.id = ep.employee_id";
+    } else {
+        $sql .= " JOIN employee_projects ep ON ep.project_id = p.id
+              WHERE ep.employee_id = $userId AND pm.due_date <= '$currentDate'";
+    }
+
+    // Add due date filter for non-employee
+    if ($userRole !== 'employee') {
+        $sql .= " WHERE pm.due_date <= '$currentDate'";
+    }
+
+    // Grouping to avoid duplicate rows for same milestone
+    $sql .= " GROUP BY pm.id";
+
+    // Run query
     $query = mysqli_query($conn, $sql);
     $milestones = [];
     if ($query) {
@@ -123,15 +277,15 @@ require_once './includes/db.php'; // Make sure DB connection is available
         }
     }
 
+    // Check if any milestone is due (not completed or not_started)
     $hasDueMilestone = false;
     foreach ($milestones as $row) {
         $status = $row['status'] ?? '';
-        if ($status === 'not_started' || $status === 'completed') continue;
-        $hasDueMilestone = true;
-        break;
+        if ($status !== 'not_started' && $status !== 'completed') {
+            $hasDueMilestone = true;
+            break;
+        }
     }
-
-
     ?>
 
     <?php if ($hasDueMilestone): ?>
@@ -145,9 +299,9 @@ require_once './includes/db.php'; // Make sure DB connection is available
 
         $alertClass = ($status === 'in_progress') ? 'warning' : 'secondary';
 
-        // Role-based redirect
-        $redirectUrl = 'milestones/index.php'; // default for employee
-        if ($userRole === 'admin' || $userRole === 'hr') {
+        // Redirect based on role
+        $redirectUrl = 'milestones/index.php';
+        if (in_array($userRole, ['admin', 'hr', 'team leader'])) {
             $redirectUrl = 'milestones/edit.php?id=' . $row['id'];
         }
         ?>
@@ -157,9 +311,13 @@ require_once './includes/db.php'; // Make sure DB connection is available
             onclick="window.location.href='<?php echo $redirectUrl; ?>'">
             <?php echo htmlspecialchars($row['project_name']); ?>'s milestone
             <strong><?php echo htmlspecialchars($row['milestone_name']); ?></strong> is due on
-            <strong><?php echo htmlspecialchars($row['due_date']); ?></strong>.
+            <strong><?php echo htmlspecialchars($row['due_date']); ?></strong>
+            <?php if ($userRole !== 'employee' && !empty($row['employee_names'])): ?>
+                by <strong><?php echo htmlspecialchars($row['employee_names']); ?></strong>
+                <?php endif; ?>.
         </div>
     <?php endforeach; ?>
+
 
 
 
@@ -381,6 +539,157 @@ ORDER BY u.name ASC
     <?php } ?>
 
 
+    <!-- Employee leaves -->
+    <?php if ($userProfile['role'] === 'employee') { ?>
+        <?php
+        $currentMonth = date('Y-m');
+        $userId = $userProfile['id'];
+
+        // Get all attendance records of current month
+        $attendanceSql = "SELECT date, in_time, out_time, note 
+                      FROM attendance 
+                      WHERE employee_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?";
+        $stmt = $conn->prepare($attendanceSql);
+        $stmt->bind_param("is", $userId, $currentMonth);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $attendanceData = [];
+        while ($row = $result->fetch_assoc()) {
+            $attendanceData[$row['date']] = $row;
+        }
+
+        // Initialize counters
+        $presentCount = 0;
+        $shortLeaveCount = 0;
+        $halfDayCount = 0;
+        $absentCount = 0;
+
+        // Generate all days of the current month
+        $daysInMonth = date('t');
+        $year = date('Y');
+        $month = date('m');
+        $today = date('Y-m-d');
+        ?>
+
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        Your Attendance - <?= date('F Y'); ?>
+                    </h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Date</th>
+                                    <th>In Time</th>
+                                    <th>Out Time</th>
+                                    <th>Status</th>
+                                    <th>Working Hours</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                for ($day = $daysInMonth; $day >= 1; $day--) {
+                                    $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+
+                                    // Skip future dates
+                                    if ($date > $today) {
+                                        continue;
+                                    }
+
+                                    $weekday = date('l', strtotime($date));
+                                    echo "<tr>";
+                                    echo "<td>$day</td>";
+                                    echo "<td>" . date('d M Y (D)', strtotime($date)) . "</td>";
+
+                                    if ($weekday === 'Saturday' || $weekday === 'Sunday') {
+                                        echo "<td colspan='5' class='text-center text-muted'>Rest Day</td>";
+                                        echo "<td>-</td>";
+                                    } elseif (isset($attendanceData[$date])) {
+                                        $record = $attendanceData[$date];
+                                        $in_time = $record['in_time'];
+                                        $out_time = $record['out_time'];
+                                        $note = $record['note'];
+
+                                        // In/Out display
+                                        echo "<td>" . (!empty($in_time) ? date('h:i A', strtotime($in_time)) : '-') . "</td>";
+                                        echo "<td>" . (!empty($out_time) ? date('h:i A', strtotime($out_time)) : '-') . "</td>";
+
+                                        // Status and working hours
+                                        if (!empty($in_time) && !empty($out_time)) {
+                                            $in = strtotime($in_time);
+                                            $out = strtotime($out_time);
+                                            if ($out < $in) {
+                                                $out += 24 * 3600; // Overnight shift
+                                            }
+
+                                            $seconds = $out - $in;
+                                            $hours = floor($seconds / 3600);
+                                            $minutes = floor(($seconds % 3600) / 60);
+                                            $workedHours = "{$hours}h {$minutes}m";
+
+                                            // Status calculation
+                                            if ($hours >= 8) {
+                                                $derivedStatus = "Present";
+                                                $badgeClass = "success";
+                                                $presentCount++;
+                                            } elseif ($hours >= 6) {
+                                                $derivedStatus = "Short Leave";
+                                                $badgeClass = "secondary";
+                                                $shortLeaveCount++;
+                                            } elseif ($hours >= 3) {
+                                                $derivedStatus = "Half Day";
+                                                $badgeClass = "info";
+                                                $halfDayCount++;
+                                            } else {
+                                                $derivedStatus = "Absent";
+                                                $badgeClass = "danger";
+                                                $absentCount++;
+                                            }
+
+                                            echo "<td><span class='badge bg-$badgeClass'>$derivedStatus</span></td>";
+                                            echo "<td>$workedHours</td>";
+                                        } else {
+                                            echo "<td><span class='badge bg-danger'>Absent</span></td>";
+                                            echo "<td>-</td>";
+                                            $absentCount++;
+                                        }
+
+                                        echo "<td>" . htmlspecialchars($note) . "</td>";
+                                    } else {
+                                        // No record = Absent
+                                        echo "<td>-</td><td>-</td>";
+                                        echo "<td><span class='badge bg-danger'>Absent</span></td>";
+                                        echo "<td>-</td>";
+                                        echo "<td>-</td>";
+                                        $absentCount++;
+                                    }
+                                    echo "</tr>";
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center">
+                        <strong class="d-block mb-2">Summary:</strong>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <span class="badge bg-success">Present: <?= $presentCount ?></span>
+                            <span class="badge bg-secondary">Short Leave: <?= $shortLeaveCount ?></span>
+                            <span class="badge bg-info">Half Day: <?= $halfDayCount ?></span>
+                            <span class="badge bg-danger">Absent: <?= $absentCount ?></span>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    <?php } ?>
 
 
 
@@ -388,6 +697,17 @@ ORDER BY u.name ASC
 
 <!-- DataTable Script -->
 <script>
+    $(document).ready(function() {
+        $('#monthly-attendance-table').DataTable({
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            lengthMenu: [10, 25, 50, 100],
+            autoWidth: false
+        });
+    });
+
     $(document).ready(function() {
         $('#daily-attendance').DataTable({
             paging: true,
