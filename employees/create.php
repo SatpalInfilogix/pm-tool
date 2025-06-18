@@ -60,15 +60,17 @@ if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role
     </div>
 </div>
 <div class="card">
-    <div class="text-danger">
+    <div class="card-body">
+        <div class="text-danger">
+            <?php
+            if ($errorMessage) {
+                echo $errorMessage;
+            }
+            ?>
+        </div>
         <?php
-        if ($errorMessage) {
-            echo $errorMessage;
-        }
+        include './form.php';
         ?>
     </div>
-    <?php
-    include './form.php';
-    ?>
 </div>
 <?php require '../includes/footer.php' ?>

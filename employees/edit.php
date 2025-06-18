@@ -3,21 +3,19 @@ ob_start();
 require_once '../includes/header.php';
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 
 $user_values = userProfile();
-    
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/test/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 };
 if (isset($_POST['edit-employee'])) {
@@ -32,6 +30,7 @@ if (isset($_POST['edit-employee'])) {
     $jobt = $_POST['jobt'];
     $role = $_POST['role'];
     $status = $_POST['status'];
+    $assigned_leader_id = $_POST['assigned_leader_id'] ?? null;
     $password = $_POST['password'];
     $passwordUpdate = '';
 
@@ -39,20 +38,21 @@ if (isset($_POST['edit-employee'])) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $passwordUpdate = ", password = '$hashedPassword'";
     };
-
+    
     $sql = "UPDATE users SET 
-                name = '$name', 
-                email = '$email', 
-                date_of_birth = '$dob', 
-                date_of_joining = '$doj', 
-                gender = '$gender', 
-                phone_number = '$phoneno', 
-                address = '$address', 
-                job_title = '$jobt', 
-                role = '$role', 
-                status = '$status'
-              
-            WHERE id = '$id'";
+            name = '$name', 
+            email = '$email', 
+            date_of_birth = '$dob', 
+            date_of_joining = '$doj', 
+            gender = '$gender', 
+            phone_number = '$phoneno', 
+            address = '$address', 
+            job_title = '$jobt', 
+            role = '$role', 
+            status = '$status', 
+            assigned_leader_id = " . ($assigned_leader_id ? "'$assigned_leader_id'" : "NULL") . "
+        $passwordUpdate
+        WHERE id = '$id'";
 
     $result = mysqli_query($conn, $sql);
     header('Location: ' . BASE_URL . '/employees/index.php');
@@ -75,9 +75,15 @@ if (isset($_GET['id'])) {
                 </div>
             </div>
             <div class="card">
-                <?php
-                include 'form.php';
-                ?>
+                <div class="card-body">
+
+                    <div class="card">
+                        <?php
+                        include 'form.php';
+                        ?>
+                    </div>
+
+                </div>
             </div>
 
 <?php }
