@@ -94,7 +94,7 @@ WHERE 1";
                 $sql .= " AND ep.employee_id = $userId";
             }
 
-            $sql .= " GROUP BY pm.id";
+            $sql .= " GROUP BY pm.id ORDER BY pm.id DESC";
 
 
             $query = mysqli_query($conn, $sql);

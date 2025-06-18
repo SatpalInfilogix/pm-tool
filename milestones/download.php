@@ -153,13 +153,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         <hr>
     <pre style="padding-right:40px;">Total :  ' . $amount_display . '</pre>
         <hr>
-
-
-
         ';
-
-
-
         // Setup DOMPDF
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);

@@ -32,7 +32,7 @@ if (isset($_SESSION['toast'])):
     <div class="card-body">
         <div class="table-responsive"> <!-- Added for responsiveness -->
             <?php
-            $sql = "SELECT * FROM holidays";
+            $sql = "SELECT * FROM holidays ORDER BY id DESC";
             $query = mysqli_query($conn, $sql);
             $holidays = mysqli_fetch_all($query, MYSQLI_ASSOC);
             ?>

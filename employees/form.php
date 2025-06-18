@@ -72,6 +72,23 @@
             </div>
         </div>
 
+        <div class="col-md-3">
+            <div class="mb-3">
+                <label for="assigned_leader_id">Assign Team Leader</label>
+                <select class="form-select" name="assigned_leader_id">
+                    <option value="">Select Team Leader (optional)</option>
+                    <?php
+                    // Fetch all team leaders
+                    $result = $conn->query("SELECT id, name FROM users WHERE role = 'team leader'");
+                    while ($leader = $result->fetch_assoc()):
+                        $selected = (isset($row['assigned_leader_id']) && $row['assigned_leader_id'] == $leader['id']) ? 'selected' : '';
+                    ?>
+                        <option value="<?= $leader['id'] ?>" <?= $selected ?>><?= htmlspecialchars($leader['name']) ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+        </div>
+
 
     </div>
 
@@ -127,6 +144,16 @@
 
 
 <script>
+
+    $('select[name="role"]').change(function() {
+    var role = $(this).val();
+    if (role === 'employee') {
+        $('select[name="assigned_leader_id"]').removeAttr('disabled');
+    } else {
+        $('select[name="assigned_leader_id"]').val('').attr('disabled', true);
+    }
+}).trigger('change');
+
     $(document).ready(function() {
         $("#dob, #doj").datepicker({
             format: 'yyyy-mm-dd',

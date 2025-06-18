@@ -21,7 +21,7 @@ if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role
         <div class="table-responsive"> <!-- Added for responsiveness -->
 
             <?php
-            $sql = "SELECT * FROM expense_categories";
+            $sql = "SELECT * FROM expense_categories ORDER BY id DESC";
             $query = mysqli_query($conn, $sql);
             if ($num = mysqli_num_rows($query) > 0) {
                 $expense_categories = mysqli_fetch_all($query, MYSQLI_ASSOC);

@@ -17,7 +17,7 @@ $userRole = $userProfile['role']; ?>
     <div class="card-body">
         <div class="table-responsive"> <!-- Added for responsiveness -->
             <?php
-            $sql = "SELECT * FROM policies";
+            $sql = "SELECT * FROM policies  ORDER BY id DESC";
             $query = mysqli_query($conn, $sql);
             $num = mysqli_num_rows($query);
             $policies = mysqli_fetch_all($query, MYSQLI_ASSOC);

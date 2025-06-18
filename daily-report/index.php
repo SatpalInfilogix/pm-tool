@@ -31,6 +31,10 @@
         $sql .= " AND (DATE(ps.created_at) = '$date' OR DATE(ps.updated_at) = '$date')";
     }
 
+    // Show latest first
+    $sql .= " ORDER BY ps.created_at DESC";
+
+
     $query = mysqli_query($conn, $sql);
 
     // Fetch results

@@ -224,6 +224,101 @@ require_once './includes/db.php';
         </div>
     <?php endif; ?>
 
+<?php if ($userProfile['role'] === 'team leader'): ?>
+    <?php
+    $userId = $userProfile['id'];
+
+    // 1. Count employees under this leader
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE assigned_leader_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $stmt->bind_result($teamMembersCount);
+    $stmt->fetch();
+    $stmt->close();
+
+    // 2. Count projects assigned to the team leader
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM projects WHERE team_leader_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $stmt->bind_result($leaderProjectCount);
+    $stmt->fetch();
+    $stmt->close();
+
+    // 3. Count completed milestones for leader's projects
+    $stmt = $conn->prepare("
+        SELECT COUNT(*) 
+        FROM project_milestones pm 
+        JOIN projects p ON pm.project_id = p.id 
+        WHERE p.team_leader_id = ? AND pm.status = 'completed'
+    ");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $stmt->bind_result($completedMilestones);
+    $stmt->fetch();
+    $stmt->close();
+    ?>
+
+    <div class="col-xl-12">
+        <div class="row">
+            <!-- Team Members -->
+            <div class="col-md-4">
+                <div class="card mini-stats-wid shadow">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium fs-4">Team Members</p>
+                                <h4 class="mb-0"><?= $teamMembersCount ?></h4>
+                            </div>
+                            <div class="flex-shrink-0 align-self-center">
+                                <div class="mini-stat-icon avatar-sm rounded-circle bg-warning">
+                                    <span class="avatar-title"><i class="bx bx-group fs-2"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="col-md-4">
+                <div class="card mini-stats-wid shadow">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium fs-4">My Projects</p>
+                                <h4 class="mb-0"><?= $leaderProjectCount ?></h4>
+                            </div>
+                            <div class="flex-shrink-0 align-self-center">
+                                <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
+                                    <span class="avatar-title"><i class="bx bx-briefcase fs-2"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Milestones -->
+            <div class="col-md-4">
+                <div class="card mini-stats-wid shadow">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium fs-4">Completed Tasks</p>
+                                <h4 class="mb-0"><?= $completedMilestones ?></h4>
+                            </div>
+                            <div class="flex-shrink-0 align-self-center">
+                                <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
+                                    <span class="avatar-title"><i class="bx bx-check-double fs-2"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 
 

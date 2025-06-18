@@ -65,7 +65,7 @@ if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role
     <div class="card-body">
         <div class="table-responsive"> <!-- Added for responsiveness -->
             <?php
-            $sql = "SELECT e.id, e.title, e.amount, e.status, e.expense_date, ec.name FROM expenses as e INNER JOIN expense_categories as ec ON e.category_id = ec.id";
+            $sql = "SELECT e.id, e.title, e.amount, e.status, e.expense_date, ec.name FROM expenses as e INNER JOIN expense_categories as ec ON e.category_id = ec.id ORDER BY e.id DESC";
             if (isset($_GET['category_id']) && !empty($_GET['category_id'])) {
                 $category_id = intval($_GET['category_id']);
                 $sql .= ' WHERE category_id=' . $category_id;

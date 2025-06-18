@@ -22,7 +22,7 @@ if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role
     <div class="card-body">
         <div class="table-responsive"> <!-- Added for responsiveness -->
             <?php
-            $sql = "SELECT * FROM users";
+            $sql = "SELECT * FROM users ORDER BY id DESC";
             $query = mysqli_query($conn, $sql);
             $users = mysqli_fetch_all($query, MYSQLI_ASSOC);
             ?>
