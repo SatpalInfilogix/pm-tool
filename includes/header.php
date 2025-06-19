@@ -109,7 +109,7 @@ $cacheBuster = '?v=' . time();
                         return $count;
                     }
 
-                    
+
                     function getNotifications($userProfile)
                     {
                         global $conn;
@@ -404,6 +404,19 @@ $cacheBuster = '?v=' . time();
                                 </ul>
                             </li>
                         <?php } ?>
+                        <?php if ($userProfile['role'] === 'admin') { ?>
+                            <li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="bx bx-question-mark"></i>
+                                    <span>Interview</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li><a href="<?php echo BASE_URL; ?>/add-question.php">Interview Questions</a></li>
+                                    <li><a href="<?php echo BASE_URL; ?>/submitted-answers.php">Submitted Answers</a></li>
+                                </ul>
+                            </li>
+                        <?php } ?>
+
                     </ul>
                 </div>
             </div>
