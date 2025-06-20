@@ -224,92 +224,93 @@ require_once './includes/db.php';
         </div>
     <?php endif; ?>
 
-<?php if ($userProfile['role'] === 'team leader'): ?>
-    <?php
-    $userId = $userProfile['id'];
+    <?php if ($userProfile['role'] === 'team leader'): ?>
+        <?php
+        $userId = $userProfile['id'];
 
-    // 1. Count employees under this leader
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE assigned_leader_id = ?");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $stmt->bind_result($teamMembersCount);
-    $stmt->fetch();
-    $stmt->close();
+        // 1. Count employees under this leader
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE assigned_leader_id = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $stmt->bind_result($teamMembersCount);
+        $stmt->fetch();
+        $stmt->close();
 
-    // 2. Count projects assigned to the team leader
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM projects WHERE team_leader_id = ?");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $stmt->bind_result($leaderProjectCount);
-    $stmt->fetch();
-    $stmt->close();
+        // 2. Count projects assigned to the team leader
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM projects WHERE team_leader_id = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $stmt->bind_result($leaderProjectCount);
+        $stmt->fetch();
+        $stmt->close();
 
-    // 3. Count completed milestones for leader's projects
-    $stmt = $conn->prepare("
+        // 3. Count completed milestones for leader's projects
+        $stmt = $conn->prepare("
         SELECT COUNT(*) 
         FROM project_milestones pm 
         JOIN projects p ON pm.project_id = p.id 
         WHERE p.team_leader_id = ? AND pm.status = 'completed'
     ");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $stmt->bind_result($completedMilestones);
-    $stmt->fetch();
-    $stmt->close();
-    ?>
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $stmt->bind_result($completedMilestones);
+        $stmt->fetch();
+        $stmt->close();
+        ?>
 
-    <div class="col-xl-12">
-        <div class="row">
-            <!-- Team Members -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid shadow">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-4">Team Members</p>
-                                <h4 class="mb-0"><?= $teamMembersCount ?></h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="mini-stat-icon avatar-sm rounded-circle bg-warning">
-                                    <span class="avatar-title"><i class="bx bx-group fs-2"></i></span>
+        <div class="col-xl-12">
+            <div class="row">
+                <!-- Team Members -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">Team Members</p>
+                                    <h4 class="mb-0"><?= $teamMembersCount ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-warning">
+                                        <span class="avatar-title"><i class="bx bx-group fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Projects -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid shadow">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-4">My Projects</p>
-                                <h4 class="mb-0"><?= $leaderProjectCount ?></h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
-                                    <span class="avatar-title"><i class="bx bx-briefcase fs-2"></i></span>
+                <!-- Projects -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">My Projects</p>
+                                    <h4 class="mb-0"><?= $leaderProjectCount ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
+                                        <span class="avatar-title"><i class="bx bx-briefcase fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Completed Milestones -->
-            <div class="col-md-4">
-                <div class="card mini-stats-wid shadow">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="flex-grow-1">
-                                <p class="text-muted fw-medium fs-4">Completed Tasks</p>
-                                <h4 class="mb-0"><?= $completedMilestones ?></h4>
-                            </div>
-                            <div class="flex-shrink-0 align-self-center">
-                                <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
-                                    <span class="avatar-title"><i class="bx bx-check-double fs-2"></i></span>
+                <!-- Completed Milestones -->
+                <div class="col-md-4">
+                    <div class="card mini-stats-wid shadow">
+                        <div class="card-body">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted fw-medium fs-4">Completed Tasks</p>
+                                    <h4 class="mb-0"><?= $completedMilestones ?></h4>
+                                </div>
+                                <div class="flex-shrink-0 align-self-center">
+                                    <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
+                                        <span class="avatar-title"><i class="bx bx-check-double fs-2"></i></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -317,10 +318,37 @@ require_once './includes/db.php';
                 </div>
             </div>
         </div>
-    </div>
-<?php endif; ?>
+    <?php endif; ?>
 
 
+
+    <?php
+    // Get next holiday within 3 days (today + next 2)
+    $holidaySql = "
+    SELECT * FROM holidays 
+    WHERE date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+    ORDER BY date ASC
+    LIMIT 1
+";
+    $holidayQuery = mysqli_query($conn, $holidaySql);
+    $nextHoliday = mysqli_fetch_assoc($holidayQuery);
+    ?>
+
+    <?php if (!empty($nextHoliday)): ?>
+        <a href="http://localhost/pm-tool/holidays/index.php">
+        <div class="alert alert-primary border shadow-sm rounded-3 px-4 py-3 d-flex align-items-center gap-3 mt-4">
+            <div style="font-size: 1.4rem;">🎉</div>
+            <div>
+                <div class="fw-bold mb-1">Upcoming Holiday</div>
+                <div>
+                    <span class="fw-semibold text-dark"><?= htmlspecialchars($nextHoliday['name']) ?></span>
+                    on <span class="text-primary fw-semibold"><?= date('d M Y', strtotime($nextHoliday['date'])) ?></span>
+                </div>
+                <div class="text-muted small fst-italic mt-1">📌 <?= htmlspecialchars($nextHoliday['description']) ?></div>
+            </div>
+        </div>
+        </a>
+    <?php endif; ?>
 
 
     <!-- Milestone Alerts -->
@@ -400,7 +428,8 @@ require_once './includes/db.php';
             $redirectUrl = 'milestones/edit.php?id=' . $row['id'];
         }
         ?>
-        <div class="alert alert-<?php echo $alertClass; ?> mb-3"
+        <div>
+        <div class="alert alert-<?php echo $alertClass; ?> mb-3 "
             role="alert"
             style="cursor: pointer;"
             onclick="window.location.href='<?php echo $redirectUrl; ?>'">
@@ -410,6 +439,7 @@ require_once './includes/db.php';
             <?php if ($userRole !== 'employee' && !empty($row['employee_names'])): ?>
                 by <strong><?php echo htmlspecialchars($row['employee_names']); ?></strong>
                 <?php endif; ?>.
+        </div>
         </div>
     <?php endforeach; ?>
 
@@ -785,6 +815,89 @@ ORDER BY u.name ASC
             </div>
         </div>
     <?php } ?>
+
+
+    <?php if ($userProfile['role'] === 'team leader') { ?>
+
+        <?php
+        $teamLeaderId = $userProfile['id'];
+
+        $projectQuery = "
+    SELECT 
+        p.id,
+        p.name AS project_name,
+        p.due_date,
+        COUNT(m.id) AS total_milestones,
+        SUM(CASE WHEN m.status = 'completed' THEN 1 ELSE 0 END) AS completed_milestones
+    FROM projects p
+    LEFT JOIN project_milestones m ON p.id = m.project_id
+    WHERE p.team_leader_id = $teamLeaderId
+    GROUP BY p.id, p.due_date
+    ORDER BY p.due_date ASC
+";
+
+
+
+        $projectResult = mysqli_query($conn, $projectQuery);
+        ?>
+
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">📊 Project Overview</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="leader-projects">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Project Name</th>
+                                    <th>Deadline</th>
+                                    <th>Progress</th>
+                                    <th>Completion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $i = 1;
+                                while ($project = mysqli_fetch_assoc($projectResult)):
+                                    $completion = 0;
+                                    if ($project['total_milestones'] > 0) {
+                                        $completion = round(($project['completed_milestones'] / $project['total_milestones']) * 100);
+                                    }
+
+                                    $badgeClass = 'danger';
+                                    if ($completion == 100) $badgeClass = 'success';
+                                    elseif ($completion >= 60) $badgeClass = 'info';
+                                    elseif ($completion >= 30) $badgeClass = 'warning';
+                                ?>
+                                    <tr onclick="window.location.href='projects/edit.php?id=<?= $project['id'] ?>'" style="cursor:pointer;">
+                                        <td><?= $i++ ?></td>
+                                        <td><?= htmlspecialchars($project['project_name']) ?></td>
+                                        <td><?= date("d M Y", strtotime($project['due_date'])) ?></td>
+                                        <td>
+                                            <?= $project['completed_milestones'] ?> / <?= $project['total_milestones'] ?> milestones
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-<?= $badgeClass ?>">
+                                                <?= $completion ?>%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                                <?php if (mysqli_num_rows($projectResult) == 0): ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No projects assigned.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <?php } ?>
+
 
 
 

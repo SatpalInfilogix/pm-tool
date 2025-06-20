@@ -2,7 +2,14 @@
 ob_start();
 require_once './includes/header.php';
 require_once './includes/db.php';
+$user_values = userProfile();
 
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin' && $user_values['role'] !== 'team leader')) {
+    $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
+    $_SESSION['toast'] = "Access denied. Employees only.";
+    header("Location: " . $redirectUrl);
+    exit();
+}
 // Initialize
 $success = $error = "";
 $editing = false;
@@ -103,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <td><?= $i++ ?></td>
                             <td><?= htmlspecialchars($row['question']) ?></td>
                             <td>
-                                <a href="add-question.php?edit=<?= $row['id'] ?>" class="btn btn-sm btn-info">Edit</a>
+                                <a href="add-question.php?edit=<?= $row['id'] ?>" class="btn btn-sm btn-primary">Edit</a>
                                 <a href="add-question.php?delete=<?= $row['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this question?')">Delete</a>
                             </td>
                         </tr>

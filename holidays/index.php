@@ -32,10 +32,10 @@ if (isset($_SESSION['toast'])):
     <div class="card-body">
         <div class="table-responsive"> <!-- Added for responsiveness -->
             <?php
-            $sql = "SELECT * FROM holidays ORDER BY id DESC";
+            $sql = "SELECT * FROM holidays WHERE date >= CURDATE() ORDER BY date ASC";
             $query = mysqli_query($conn, $sql);
             $holidays = mysqli_fetch_all($query, MYSQLI_ASSOC);
-            ?>
+            ?>  
             <table class="table table-bordered table-striped" id="employeeTable">
                 <thead>
                     <th>#</th>
@@ -55,13 +55,13 @@ if (isset($_SESSION['toast'])):
                         <tr>
                             <td><?php echo  $key + 1 ?></td>
                             <td><?php echo $row['name'] ?></td>
-                            <td><?php echo $row['date'] ?></td>
+                            <td><?php echo date('d M Y', strtotime($row['date'])) ?></td>
                             <td><?php echo $row['description'] ?></td>
                             <td class="text-capitalize"><?php echo $row['type'] ?></td>
                             <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr'): ?>
 
                                 <td>
-                                    <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-success btn-sm"><i class="bx bx-edit fs-5"></i></a>
+                                    <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-primary btn-sm"><i class="bx bx-edit fs-5"></i></a>
                                     <button class="btn btn-danger btn-sm delete-btn" data-table-name="holidays" data-id="<?php echo $row['id'] ?>"><i class="bx bx-trash fs-5"></i></button>
                                 </td>
                             <?php endif; ?>

@@ -61,7 +61,7 @@ $userRole = $userProfile['role']; ?>
                             <td><?php echo $row['description'] ?></td>
                             <?php if ($userRole === 'admin' || $userRole === 'hr'): ?>
                                 <td>
-                                    <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-success btn-sm"><i class="bx bx-edit fs-5"></i></a>
+                                    <a href='./edit.php?id=<?php echo $row['id'] ?>' class="btn btn-primary btn-sm"><i class="bx bx-edit fs-5"></i></a>
                                     <button class="btn btn-danger btn-sm delete-btn" data-table-name="policies" data-id="<?php echo $row['id'] ?>"><i class="bx bx-trash fs-5"></i></button>
                                 </td>
                             <?php endif; ?>

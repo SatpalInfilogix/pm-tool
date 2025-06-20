@@ -1,7 +1,15 @@
 <?php
+ob_start();
 require_once './includes/header.php';
 require_once 'includes/db.php';
+$user_values = userProfile();
 
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin' && $user_values['role'] !== 'team leader')) {
+    $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
+    $_SESSION['toast'] = "Access denied. Employees only.";
+    header("Location: " . $redirectUrl);
+    exit();
+}
 // Fetch submissions
 $sql = "SELECT * FROM test_submissions ORDER BY submitted_at DESC";
 $result = $conn->query($sql);
@@ -69,4 +77,6 @@ while ($row = $result->fetch_assoc()) {
     <?php endif; ?>
 </div>
 
-<?php require_once './includes/footer.php'; ?>
+<?php require_once './includes/footer.php';
+
+ob_end_flush(); ?>

@@ -2,7 +2,14 @@
 ob_start();
 require_once './includes/header.php';
 require_once './includes/db.php'; // ✅ fixed path if needed
+$user_values = userProfile();
 
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin' && $user_values['role'] !== 'team leader')) {
+    $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
+    $_SESSION['toast'] = "Access denied. Employees only.";
+    header("Location: " . $redirectUrl);
+    exit();
+}
 // Validate ID
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Invalid question ID.");

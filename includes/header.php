@@ -404,7 +404,7 @@ $cacheBuster = '?v=' . time();
                                 </ul>
                             </li>
                         <?php } ?>
-                        <?php if ($userProfile['role'] === 'admin') { ?>
+                        <?php if ($userProfile['role'] === 'admin' || $userProfile['role'] === 'hr' || $userProfile['role'] === 'team leader') { ?>
                             <li>
                                 <a href="javascript: void(0);" class="has-arrow waves-effect">
                                     <i class="bx bx-question-mark"></i>

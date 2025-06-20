@@ -4,11 +4,10 @@ $plugins = ['datepicker'];
 require '../includes/header.php';
 $user_values = userProfile();
 
-if($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin'))
-{
+if ($user_values['role'] && ($user_values['role'] !== 'hr' && $user_values['role'] !== 'admin')) {
     $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/pm-tool';
     $_SESSION['toast'] = "Access denied. Employees only.";
-    header("Location: " . $redirectUrl); 
+    header("Location: " . $redirectUrl);
     exit();
 }
 
@@ -16,7 +15,7 @@ $errorMessage = '';
 if (isset($_POST['add_holiday'])) {
     $name = $_POST['name'];
     $date = $_POST['date'];
-    $description = $_POST['description'];
+    $description = strip_tags($_POST['description']);
     $type = $_POST['type'];
     $recurring = isset($_POST['recurring']) ? 1 : 0;
     $query = "SELECT * FROM holidays WHERE name = '$name' OR date = '$date'";
